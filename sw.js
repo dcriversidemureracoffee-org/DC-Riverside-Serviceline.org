@@ -16,7 +16,7 @@ const STATIC_ASSETS = [
 
 const EXPECTED_CACHES = [CACHE_NAME];
 
-const API_BASE = 'https://script.google.com/macros/s/AKfycbwsbPqeRiqW2it0f1UpTNMRba_YQ5KO7wo2syRn_u7CvxM5oEyct6n9zq0lntfbRTm4/exec';
+const API_BASE = 'https://script.google.com/macros/s/AKfycbyG18AvucL_ckaUQr6V-nzBtwxi21TEOL_096iArq8RXC-Z6xAQotZwtFU7WiYOl8xG/exec';
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -187,4 +187,5 @@ self.addEventListener('sync', event => {
 async function syncPendingActions() {
   console.log('[SW] Background sync triggered — attempting to send pending items');
   // → Add IndexedDB queue + retry logic here later if needed
+
 }
