@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Riverside service</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS Safari home screen support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Riverside service">
+
+<!-- Reuse your existing 192×192 icon for Apple devices -->
+<link rel="apple-touch-icon" sizes="180x180" href="customer-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="customer-192.png">
+<link rel="apple-touch-icon" sizes="167x167" href="customer-192.png">
+<!-- Fallback (also uses the same file) -->
+<link rel="apple-touch-icon" href="customer-192.png">
+  <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            height: 100vh; /* Set a fixed height */
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent the whole page from scrolling */
+        }
+        header {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 14px 20px;
+            border-bottom: 1px solid rgba(96, 165, 250, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .header-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        .announcements-container {
+            flex: 1; /* Takes up all available space */
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
+            overflow-y: auto; /* Scroll happens here */
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* Increased gap for bigger cards */
+        }
+        .announcement {
+            display: flex;
+            align-items: flex-start;
+            max-width: 100%; /* Bigger container */
+            gap: 12px;
+            animation: fadeIn 0.4s ease-out;
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .announcement.own {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+        .avatar {
+            width: 48px; /* Slightly larger */
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #60a5fa;
+            flex-shrink: 0;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+        }
+        .announcement-content {
+            background: transparent; /* No separate bg, part of card */
+            padding: 0;
+            max-width: calc(100% - 60px);
+            width: 100%;
+        }
+        .announcement.own .announcement-content {
+            color: white;
+        }
+        .name {
+            font-weight: 600;
+            color: #60a5fa;
+            margin-bottom: 4px;
+            font-size: 1rem;
+        }
+        .announcement.own .name {
+            color: white;
+            opacity: 0.9;
+        }
+        .text {
+            word-break: break-word;
+            line-height: 1.6;
+            white-space: pre-line; /* Preserve paragraphs */
+            margin-bottom: 12px;
+        }
+        .time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            opacity: 0.8;
+            display: block;
+        }
+        .announcement.own .time {
+            color: rgba(255,255,255,0.7);
+        }
+        .input-area {
+            display: none; /* Remove bottom input */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Scrollbar styling */
+        .announcements-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .announcements-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .announcements-container::-webkit-scrollbar-thumb {
+            background: rgba(96, 165, 250, 0.4);
+            border-radius: 3px;
+        }
+        /* Media Rendering in Announcements */
+        .media-content {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            margin-bottom: 12px;
+            scroll-snap-type: x mandatory;
+            max-width: 100%;
+            padding-bottom: 10px; /* For scrollbar */
+        }
+        .media-item {
+            flex: 0 0 auto;
+            width: 80%; /* Responsive */
+            max-height: 400px;
+            scroll-snap-align: center;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .media-item img, .media-item video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        /* Modal for New Announcement */
+        #new-ann-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 24px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 {
+            font-size: 1.4rem;
+            color: #60a5fa;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        #ann-text {
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            resize: vertical;
+            min-height: 120px;
+        }
+        #ann-text:focus {
+            background: rgba(255,255,255,0.14);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+        }
+        #ann-text::placeholder {
+            color: #94a3b8;
+        }
+        .file-add {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #add-file-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            color: white;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+       .preview-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;               /* Slightly more breathing room */
+    min-height: 160px;       /* Fixed minimum height */
+    padding: 12px 0;
+    scroll-snap-type: x mandatory;
+    align-items: center;     /* NEW: vertical center alignment */
+}
+
+.preview-item {
+    position: relative;
+    flex: 0 0 150px;
+    width: 150px;
+    height: 150px;           /* Fixed square size */
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.25);
+    scroll-snap-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+}
+
+/* Force media to fill the square box (cropped if needed) */
+.preview-item img,
+.preview-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;       /* NEW: crops to fill square, no distortion */
+    object-position: center;
+    display: block;
+}
+        .remove-preview {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #send-ann-btn {
+            align-self: flex-end;
+            padding: 12px 24px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            color: white;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #send-ann-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+        }
+        .msg-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .announcement.own:hover .msg-actions {
+            opacity: 1;
+        }
+        .action-btn {
+            font-size: 0.75rem;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            width: auto;
+            height: auto; /* Reset global button styles */
+            padding: 2px 5px;
+        }
+        .action-btn:hover {
+            color: white;
+            transform: none;
+            box-shadow: none; /* Reset global hover */
+        }
+        .delete-btn:hover {
+            color: #f87171;
+        }
+        /* Toast Notifications Container */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-left: 4px solid #3b82f6;
+            animation: slideDown 0.3s ease forwards;
+            min-width: 250px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Inline Edit Field */
+        .edit-input {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #60a5fa;
+            color: white;
+            border-radius: 8px;
+            padding: 8px;
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 5px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        .edit-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        .text {
+    margin-top: 12px;           /* breathing room after media */
+    font-size: 0.98rem;
+    line-height: 1.65;
+}
+
+/* Loading spinner inside Send button */
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top: 3px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ==============================================
+   RESPONSIVE ADJUSTMENTS for announce.html
+   Mobile-first - Small phones → Tablets
+   ============================================== */
+
+/* Very small phones (portrait) - iPhone SE, Galaxy small, etc. (~320–390px) */
+@media (max-width: 390px) {
+  body {
+    font-size: 0.94rem;
+  }
+
+  header {
+    padding: 10px 14px;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+  }
+
+  .header-content {
+    gap: 10px;
+  }
+
+  .announcements-container {
+    padding: 12px 14px;
+    gap: 1.2rem;
+  }
+
+  .announcement {
+    padding: 14px;
+    border-radius: 14px;
+    gap: 10px;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .announcement-content {
+    max-width: calc(100% - 52px);
+  }
+
+  .name {
+    font-size: 0.95rem;
+  }
+
+  .text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .time {
+    font-size: 0.7rem;
+  }
+
+  .media-content {
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .media-item {
+    width: 85%;           /* Take more width on tiny screens */
+    max-height: 280px;
+  }
+
+  /* Modal adjustments */
+  .modal-content {
+    padding: 20px;
+    width: 94%;
+  }
+
+  .modal-header h2 {
+    font-size: 1.3rem;
+  }
+
+  #ann-text {
+    font-size: 0.95rem;
+    min-height: 110px;
+    padding: 12px;
+  }
+
+  .preview-container {
+    min-height: 140px;
+  }
+
+  .preview-item {
+    flex: 0 0 130px;
+    width: 130px;
+    height: 130px;
+  }
+
+  #send-ann-btn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+  }
+
+  .action-btn {
+    font-size: 0.7rem;
+  }
+}
+
+/* Small phones & typical mobile (up to ~480–520px) */
+@media (max-width: 520px) {
+  .announcements-container {
+    padding: 16px 14px;
+  }
+
+  .announcement {
+    max-width: 100%;
+  }
+
+  .media-item {
+    width: 82%;
+    max-height: 320px;
+  }
+
+  .preview-item {
+    flex: 0 0 140px;
+    width: 140px;
+    height: 140px;
+  }
+
+  .file-add {
+    font-size: 0.9rem;
+  }
+
+  .close-modal {
+    font-size: 1.4rem;
+  }
+}
+
+/* General mobile / small tablets (up to ~767px) */
+@media (max-width: 767px) {
+  header .header-content {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .announcements-container {
+    padding: 18px;
+  }
+
+  .announcement {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .text {
+    margin-top: 10px;
+    line-height: 1.65;
+  }
+
+  .media-content {
+    gap: 10px;
+  }
+
+  .media-item {
+    width: 78%;              /* Still scrollable carousel */
+    max-height: 380px;
+  }
+
+  .media-item iframe {
+    height: 280px;           /* Smaller video previews on mobile */
+  }
+
+  /* Modal - make it feel more spacious on mobile */
+  .modal-content {
+    width: 92%;
+    max-width: 520px;
+    padding: 24px;
+  }
+
+  #ann-text {
+    min-height: 130px;
+  }
+
+  .preview-container {
+    min-height: 160px;
+  }
+
+  .preview-item {
+    flex: 0 0 150px;
+    width: 150px;
+    height: 150px;
+  }
+
+  /* Better touch targets */
+  button,
+  .action-btn,
+  .remove-preview {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* Tablets & small landscape phones (768px–1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .announcements-container {
+    padding: 24px;
+    max-width: 760px;
+  }
+
+  .announcement {
+    padding: 20px;
+  }
+
+  .media-item {
+    width: 70%;
+    max-height: 420px;
+  }
+
+  .modal-content {
+    width: 80%;
+    max-width: 680px;
+  }
+
+  .preview-item {
+    flex: 0 0 180px;
+    width: 180px;
+    height: 180px;
+  }
+}
+
+/* Optional: Prevent iOS zoom on input focus */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  button {
+    font-size: 16px; /* iOS minimum to prevent zoom */
+  }
+}
+
+.view-badge {
+  background: #3b82f6;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: bold;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.8);
+}
+.announcement {
+    margin-bottom: 28px;      /* extra space below each card so the detached badge doesn't overlap the next one */
+    position: relative;       /* important for absolute children */
+}
+.view-badge {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+    transform: translateY(4px);   /* slight extra drop */
+}
+
+    </style>
+</head>
+
+
+<body>
+    <div id="toast-container"></div>
+<header>
+    <div class="header-content">
+        <!-- Back Button (left side) -->
+        <a href="index.html" style="
+            color: #60a5fa; 
+            font-size: 1.6rem; 
+            text-decoration: none; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+        ">
+            <i class="fas fa-arrow-left"></i>
+            <span style="font-size: 1.1rem; font-weight: 500;">Back</span>
+        </a>
+
+        <!-- Title (centered) -->
+        <h1 style="margin: 0; flex: 1; text-align: center;">Announcements</h1>
+
+        <!-- Live indicator + New Announcement button (right side) -->
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="font-size:0.9rem; color:#94a3b8;">
+                <i class="fas fa-users"></i> Live
+            </div>
+            <button id="new-ann-btn" style="
+                background: none; 
+                border: none; 
+                color: #60a5fa; 
+                font-size: 1.5rem; 
+                cursor: pointer;
+            ">
+                <i class="fas fa-plus-circle"></i>
+            </button>
+        </div>
+    </div>
+</header>
+    <div class="announcements-container" id="announcements"></div>
+    
+    <!-- Modal for New Announcement -->
+    <div id="new-ann-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Announcement</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <textarea id="ann-text" placeholder="Type your announcement... (supports paragraphs)"></textarea>
+            <div class="file-add">
+                <button id="add-file-btn"><i class="fas fa-plus"></i></button>
+                <span style="color: #94a3b8;">Add images or videos</span>
+            </div>
+            <div class="preview-container" id="preview-container"></div>
+            <button id="send-ann-btn">Post Announcement</button>
+        </div>
+    </div>
+    
+    <input type="file" id="file-input" accept="image/*,video/*" multiple style="display:none;">
+
+    <script>
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbzMXrqzu0JPQ0u4E00YmSh30qlMqV5j-eINV99Zo8qp6mrgAko6uaKiOrHyWNGT5RVe/exec';
+      let userName = localStorage.getItem('userName');
+
+        if (!userName) {
+            window.location.href = 'login.html';
+        }
+        const announcementsDiv = document.getElementById('announcements');
+        const newAnnBtn = document.getElementById('new-ann-btn');
+        const newAnnModal = document.getElementById('new-ann-modal');
+        const closeModal = document.querySelector('.close-modal');
+        const annText = document.getElementById('ann-text');
+        const addFileBtn = document.getElementById('add-file-btn');
+        const fileInput = document.getElementById('file-input');
+        const previewContainer = document.getElementById('preview-container');
+        const sendAnnBtn = document.getElementById('send-ann-btn');
+        
+        let lastAnnouncementCount = 0;
+        let pollingInterval = null;
+        let selectedFiles = []; // Array for multiple files
+        
+        // Open modal
+        newAnnBtn.addEventListener('click', () => {
+            newAnnModal.style.display = 'flex';
+            annText.focus();
+        });
+        
+        // Close modal
+        closeModal.addEventListener('click', () => {
+            resetModal();
+        });
+        
+        // Click outside to close
+        newAnnModal.addEventListener('click', (e) => {
+            if (e.target === newAnnModal) resetModal();
+        });
+        
+        // Trigger file picker
+        addFileBtn.addEventListener('click', () => fileInput.click());
+        
+        // Handle multiple file selection and previews
+        fileInput.addEventListener('change', function() {
+            const files = Array.from(this.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result.split(',')[1];
+                    selectedFiles.push({ base64, type: file.type, name: file.name });
+                    addPreview(e.target.result, file.type, selectedFiles.length - 1);
+                };
+                reader.readAsDataURL(file);
+            });
+            this.value = ''; // Allow re-selecting same files
+        });
+        
+        // Add preview item
+        function addPreview(dataUrl, type, index) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
+            const media = type.startsWith('video') ? 
+                `<video src="${dataUrl}" muted></video>` : 
+                `<img src="${dataUrl}">`;
+            previewItem.innerHTML = `
+                ${media}
+                <button class="remove-preview" data-index="${index}"><i class="fas fa-times"></i></button>
+            `;
+            previewContainer.appendChild(previewItem);
+            
+            // Remove preview
+            previewItem.querySelector('.remove-preview').addEventListener('click', (e) => {
+                const idx = parseInt(e.target.dataset.index);
+                selectedFiles.splice(idx, 1);
+                previewContainer.removeChild(previewItem);
+                // Update indices
+                Array.from(previewContainer.children).forEach((child, i) => {
+                    child.querySelector('.remove-preview').dataset.index = i;
+                });
+            });
+        }
+        
+        // Reset modal
+        function resetModal() {
+            newAnnModal.style.display = 'none';
+            annText.value = '';
+            previewContainer.innerHTML = '';
+            selectedFiles = [];
+        }
+        
+        function scrollToBottom(force = false) {
+            const isNearBottom = Math.abs(announcementsDiv.scrollHeight - announcementsDiv.clientHeight - announcementsDiv.scrollTop) < 150;
+            if (force || isNearBottom) {
+                announcementsDiv.scrollTop = announcementsDiv.scrollHeight;
+            }
+        }
+        
+        function extractFileId(url) {
+            if (!url) return '';
+            const match = url.match(/[-\w]{25,}/);
+            return match ? match[0] : '';
+        }
+        
+        // Use lh3 for rendering Drive images/videos
+        function getLh3Link(url) {
+            const id = extractFileId(url);
+            return id ? `https://lh3.googleusercontent.com/d/${id}` : '';
+        }
+        
+async function loadAnnouncements(silent = true) {
+    try {
+        const response = await fetch(`${scriptUrl}?operation=getData`);
+        const data = await response.json();
+        const viewsResponse = await fetch(`${scriptUrl}?operation=getAnnouncementViewCounts`);
+        const viewsData = await viewsResponse.json();
+        const viewCounts = viewsData.viewCounts || [];
+
+        if (silent && data.announcements?.length === lastAnnouncementCount) return;
+
+        lastAnnouncementCount = data.announcements?.length || 0;
+
+        // IMPORTANT: Clear all existing cards before rendering new ones
+        announcementsDiv.innerHTML = '';
+
+        const wasAtBottom = Math.abs(announcementsDiv.scrollHeight - announcementsDiv.clientHeight - announcementsDiv.scrollTop) < 150;
+
+        // Render announcements (your existing code, unchanged)
+data.announcements?.reverse().forEach((c, i) => {
+    const isOwn = c.name === userName;
+    const viewCount = viewCounts[i] || 0;  // ← CORRECT: i now matches oldest-first order
+    const fileLinks = c.fileLink ? c.fileLink.split(',') : [];
+    const fileTypes = c.fileType ? c.fileType.split(',') : [];
+    let mediaHtml = '';
+    if (fileLinks.length > 0) {
+        mediaHtml = '<div class="media-content">';
+        fileLinks.forEach((link, fi) => {  // renamed index to avoid conflict
+            const mediaLink = getLh3Link(link);
+            const type = fileTypes[fi] || '';
+            const isVideo = type.includes('video') || link.match(/\.(mp4|mov|webm)$/i);
+
+            const mediaItem = isVideo ? 
+                `<iframe src="${link}" 
+                         width="100%" 
+                         height="400" 
+                         allow="autoplay" 
+                         frameborder="0" 
+                         allowfullscreen></iframe>` :
+                `<img src="${getLh3Link(link)}" loading="lazy">`;
+            mediaHtml += `<div class="media-item">${mediaItem}</div>`;
+        });
+        mediaHtml += '</div>';
+    }
+    const ann = document.createElement('div');
+    ann.className = `announcement ${isOwn ? 'own' : ''}`;
+    const actionsHtml = isOwn ? `
+        <div class="msg-actions">
+            <button class="action-btn edit-btn" onclick="startEdit('${c.timestamp}', '${c.comment.replace(/'/g, "\\'")}')">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="action-btn delete-btn" onclick="deleteMsg('${c.timestamp}')">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    ` : '';
+
+    ann.innerHTML = `
+        <img src="https://lh3.googleusercontent.com/d/${extractFileId(c.picLink)}" class="avatar">
+        
+        <div style="position: relative; width: 100%;">
+            <div class="announcement-content">
+                <div class="name">${c.name}</div>
+                ${mediaHtml}
+                <div class="text" id="text-${c.timestamp}">${c.comment}</div>
+            </div>
+
+            <span class="time" style="
+                display: block;
+                margin-top: 12px;
+                font-size: 0.75rem;
+                color: #94a3b8;
+                opacity: 0.8;
+            ">
+                ${formatSmartTime(c.timestamp)}
+            </span>
+
+            <div style="
+                position: absolute;
+                bottom: -20px;
+                right: 16px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                z-index: 2;
+            ">
+                <span class="view-badge">${viewCount}</span>
+                ${actionsHtml}
+            </div>
+        </div>
+    `;
+    announcementsDiv.appendChild(ann);
+});
+
+        if (!silent || wasAtBottom) scrollToBottom(true);
+    } catch (err) {
+        console.error('Failed to load announcements:', err);
+    }
+}
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
+        
+        async function deleteMsg(timestamp) {
+            // Create a custom app-styled overlay
+            const overlay = document.createElement('div');
+            overlay.style = "position:fixed; inset:0; background:rgba(15, 23, 42, 0.8); backdrop-filter:blur(8px); z-index:2000; display:flex; align-items:center; justify-content:center; animation: fadeIn 0.2s ease;";
+            overlay.innerHTML = `
+                <div style="background:#1e293b; padding:24px; border-radius:16px; border:1px solid rgba(96, 165, 250, 0.2); text-align:center; max-width:300px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                    <p style="margin-bottom:8px; font-weight:600; color:#f87171; font-size:1.1rem;">Delete Announcement?</p>
+                    <p style="margin-bottom:24px; color:#94a3b8; font-size:0.9rem;">This action cannot be undone.</p>
+                    <div style="display:flex; gap:10px;">
+                        <button id="cancelDel" style="flex:1; padding:10px; border-radius:8px; border:none; background:#334155; color:white; cursor:pointer; font-weight:600;">Cancel</button>
+                        <button id="confirmDel" style="flex:1; padding:10px; border-radius:8px; border:none; background:#ef4444; color:white; cursor:pointer; font-weight:600;">Delete</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            // Button Logic
+            overlay.querySelector('#cancelDel').onclick = () => overlay.remove();
+            overlay.querySelector('#confirmDel').onclick = async () => {
+                overlay.remove(); // Close modal immediately for smooth UX
+                try {
+                    const res = await fetch(scriptUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ operation: 'deleteAnnouncement', name: userName, timestamp: timestamp })
+                    });
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        showToast("Announcement deleted");
+                        loadAnnouncements(false);
+                    } else {
+                        showToast(result.message || "Delete failed", "error");
+                    }
+                } catch (err) {
+                    showToast("Connection error", "error");
+                }
+            };
+        }
+        
+        function startEdit(timestamp, originalText) {
+            const textElement = document.getElementById(`text-${timestamp}`);
+            // Transform the text bubble into an inline editor
+            textElement.innerHTML = `
+                <textarea class="edit-input" id="edit-field-${timestamp}">${originalText}</textarea>
+                <div class="edit-controls">
+                    <button class="action-btn" style="background:#22c55e; color:white; border-radius:4px; padding:4px 8px;" onclick="saveEdit('${timestamp}')">Save</button>
+                    <button class="action-btn" style="background:#ef4444; color:white; border-radius:4px; padding:4px 8px;" onclick="loadAnnouncements(false)">Cancel</button>
+                </div>
+            `;
+            // Focus the cursor at the end of the text
+            const input = document.getElementById(`edit-field-${timestamp}`);
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+        }
+        
+        async function saveEdit(timestamp) {
+            const newText = document.getElementById(`edit-field-${timestamp}`).value.trim();
+            if (!newText) return;
+            try {
+                const res = await fetch(scriptUrl, {
+                    method: 'POST',
+                   body: JSON.stringify({ operation: 'editAnnouncement', name: userName, timestamp: timestamp, newText: newText })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    showToast("Announcement updated");
+                    loadAnnouncements(false);
+                } else {
+                    showToast(result.message || "Update failed", "error");
+                }
+            } catch (err) {
+                showToast("Connection error", "error");
+            }
+        }
+        
+       async function sendAnnouncement() {
+  const text = annText.value.trim();
+  if (!text && selectedFiles.length === 0) return;
+
+  // Disable button & show spinner
+  sendAnnBtn.disabled = true;
+  sendAnnBtn.innerHTML = '<span class="loading-spinner"></span> Posting...';
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({ 
+        operation: 'postAnnouncement', 
+        name: userName, 
+        comment: text, 
+        files: selectedFiles 
+      })
+    });
+    const result = await res.json();
+
+    if (result.status === 'success') {
+      resetModal();
+      await loadAnnouncements(false);
+      showToast("Announcement posted!", 'success');
+    } else {
+      showToast(result.message || 'Failed to post', 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  } finally {
+    // Restore button
+    sendAnnBtn.disabled = false;
+    sendAnnBtn.innerHTML = 'Post Announcement';
+  }
+}
+        
+        sendAnnBtn.addEventListener('click', sendAnnouncement);
+        
+        // Allow Enter to send (with Shift for new line)
+annText.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        // If user holds Ctrl (or Command on Mac) → send
+        if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            sendAnnouncement();
+        }
+        // Otherwise (plain Enter or Shift+Enter) → just normal new line
+        // We don't need to do anything — browser handles it automatically
+    }
+});
+        
+        loadAnnouncements(false);
+        function formatSmartTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    
+    const isToday = date.toDateString() === now.toDateString();
+    const isYesterday = date.toDateString() === new Date(now.setDate(now.getDate() - 1)).toDateString();
+    
+    let dayPart;
+    if (isToday) {
+        dayPart = "Today";
+    } else if (isYesterday) {
+        dayPart = "Yesterday";
+    } else {
+        dayPart = date.toLocaleDateString([], { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric' 
+        }); // e.g. "Wed, Jan 15"
+    }
+    
+    const timePart = date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+    
+    return `${dayPart} • ${timePart}`;
+}
+        
+        function startPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(() => loadAnnouncements(true), 8000);
+        }
+
+        // When announcements page is loaded → mark all current announcements as seen
+async function markAnnSeen() {
+  try {
+    const response = await fetch(`${scriptUrl}?operation=getData`);
+    const data = await response.json();
+    const currentTotal = data.announcements?.length || 0;
+    await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({ operation: 'markAnnouncementsSeen', name: userName, seenUpTo: currentTotal })
+    });
+    localStorage.setItem('lastSeenAnnCount', currentTotal); // Fallback
+  } catch (err) {
+    console.error("Failed to mark announcements as seen", err);
+  }
+}
+
+// Run it on page load
+markAnnSeen();
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                if (pollingInterval) clearInterval(pollingInterval);
+            } else {
+                loadAnnouncements(true);
+                startPolling();
+            }
+        });
+        
+        if (!document.hidden) startPolling();
+    </script>
+
+    <script>
+ if ('serviceWorker' in navigator) {
+  // Use './' to stay inside the /The-Riverside-Connect/ subfolder
+  navigator.serviceWorker.register('./sw.js', { scope: './' })
+    .then(reg => console.log('✅ SW registered in subfolder scope'))
+    .catch(err => console.error('❌ SW registration failed:', err));
+}
+</script>
+
+   
+</body>
+</html>

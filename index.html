@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Riverside service</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+ <link rel="manifest" href="manifest.json">
+
+ <!-- iOS Safari home screen support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Riverside service">
+
+<!-- Reuse your existing 192×192 icon for Apple devices -->
+<link rel="apple-touch-icon" sizes="180x180" href="customer-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="customer-192.png">
+<link rel="apple-touch-icon" sizes="167x167" href="customer-192.png">
+<!-- Fallback (also uses the same file) -->
+<link rel="apple-touch-icon" href="customer-192.png">
+   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+html, body {
+  width: 100%;
+  overflow-x: hidden; /* This kills the horizontal swipe */
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+   body {
+  height: 100dvh;                   /* modern phones — dynamic viewport */
+  min-height: -webkit-fill-available;  /* important iOS fallback */
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(96, 165, 250, 0.15);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-content {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: #60a5fa;
+      font-weight: 600;
+    }
+
+   .chat-container {
+      flex: 1; /* Takes up all available space between header and input */
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 20px;
+      overflow-y: auto; /* Scroll happens here */
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      /* Remove the large padding-bottom since input is no longer floating */
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      max-width: 80%;
+      gap: 12px;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .message.own {
+      margin-left: auto;
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #60a5fa;
+      flex-shrink: 0;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.25);
+    }
+
+    .message-content {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(6px);
+      padding: 12px 16px;
+      border-radius: 18px;
+      border-top-left-radius: 4px;
+      max-width: calc(100% - 54px);
+      position: relative;
+    }
+
+    .message.own .message-content {
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      color: white;
+      border-top-left-radius: 18px;
+      border-top-right-radius: 4px;
+    }
+
+    .name {
+      font-weight: 600;
+      color: #60a5fa;
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+    }
+
+    .message.own .name {
+      color: white;
+      opacity: 0.9;
+    }
+
+    .text {
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .time {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      margin-top: 6px;
+      opacity: 0.8;
+      display: block;
+    }
+
+    .message.own .time {
+      color: rgba(255,255,255,0.7);
+    }
+
+  .input-area {
+  background: rgba(15, 23, 42, 0.98);
+  padding: 12px; /* Uniform padding */
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(96, 165, 250, 0.3);
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box; /* Crucial: includes padding in the 100% width */
+}
+
+.input-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  gap: 8px; /* Slightly tighter for mobile */
+  align-items: center;
+  width: 100%;
+}
+
+#comment {
+  flex: 1;
+  min-width: 0; /* Prevents input from pushing flex container wide */
+  padding: 12px 16px;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-size: 16px; /* Prevents iOS zoom-on-focus */
+  border: none;
+  outline: none;
+}
+    #comment:focus {
+      background: rgba(255,255,255,0.14);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+    }
+
+    #comment::placeholder {
+      color: #94a3b8;
+    }
+
+    button {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      color: white;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.5);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Scrollbar styling */
+    .chat-container::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .chat-container::-webkit-scrollbar-thumb {
+      background: rgba(96, 165, 250, 0.4);
+      border-radius: 3px;
+    }
+/* Media Rendering in Chat */
+  .media-content {
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 100%;
+    display: block;
+  }
+  .media-content img, .media-content video {
+    max-width: 100%;
+    max-height: 300px;
+    display: block;
+    border-radius: 8px;
+  }
+
+  /* Preview bar above input */
+  #preview-bar {
+    display: none;
+    padding: 10px 20px;
+    background: rgba(30, 41, 59, 0.9);
+    border-top: 1px solid #60a5fa;
+    align-items: center;
+    gap: 15px;
+  }
+  #preview-bar img, #preview-bar video {
+    height: 50px;
+    border-radius: 4px;
+  }
+  .msg-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.message.own:hover .msg-actions {
+  opacity: 1;
+}
+.action-btn {
+  font-size: 0.75rem;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  width: auto; height: auto; /* Reset global button styles */
+  padding: 2px 5px;
+}
+.action-btn:hover {
+  color: white;
+  transform: none; box-shadow: none; /* Reset global hover */
+}
+.delete-btn:hover { color: #f87171; }
+
+/* Toast Notifications Container */
+#toast-container {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 1000; display: flex; flex-direction: column; gap: 10px;
+}
+.toast {
+  background: #1e293b; color: white; padding: 12px 24px; border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-left: 4px solid #3b82f6;
+  animation: slideDown 0.3s ease forwards; min-width: 250px;
+  display: flex; align-items: center; gap: 10px;
+}
+.toast.error { border-left-color: #ef4444; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Inline Edit Field */
+.edit-input {
+  width: 100%; background: rgba(255,255,255,0.1); border: 1px solid #60a5fa;
+  color: white; border-radius: 8px; padding: 8px; font-family: inherit;
+  outline: none; margin-bottom: 5px; resize: none;
+}
+.edit-controls { display: flex; gap: 5px; }
+.message-content .text {
+  margin-top: 10px;
+  line-height: 1.55;
+}
+/* Make video messages wider than text-only messages */
+.message:has(.video-container) {
+  max-width: 92%;               /* ← wider than normal 80% */
+}
+
+.message:has(.video-container) .message-content {
+  max-width: 100%;              /* let it take full available width */
+  min-width: 260px;             /* minimum comfortable size for vertical videos */
+  width: 100%;
+}
+
+/* Center the video nicely when it's pushed */
+.video-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+/* Remove forced positioning - let iframe be normal block */
+.video-container iframe {
+  width: 100%;
+  height: auto;
+  min-height: 200px;
+  max-height: 65vh;
+  aspect-ratio: 16/9;           /* fallback for horizontal */
+  display: block;
+  border: none;
+}
+
+/* Reply Preview Bar above input */
+#reply-preview {
+  display: none;
+  background: rgba(30, 41, 59, 0.95);
+  padding: 10px 20px;
+  border-left: 4px solid #60a5fa;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reply-info {
+  font-size: 0.85rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.reply-info b { color: #60a5fa; }
+
+/* Quoted message inside a comment */
+.quoted-msg {
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 3px solid #60a5fa;
+  padding: 6px 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+.message.own .quoted-msg {
+  background: rgba(255, 255, 255, 0.15);
+  border-left-color: white;
+  color: #e2e8f0;
+}
+
+/* Update this part to make buttons show for all messages on hover */
+.message:hover .msg-actions {
+  opacity: 1;
+}
+
+/* Optional: Make the reply button a slightly different color to stand out */
+.reply-btn:hover {
+  color: #60a5fa;
+}
+
+/* Audio container - similar to video for embedding Drive preview */
+.audio-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 8px 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.audio-container iframe {
+  width: 100%;
+  height: 80px; /* Shorter height for audio players */
+  border: none;
+}
+
+/* Make audio messages take appropriate width */
+.message:has(.audio-container) {
+  max-width: 85%; /* Moderate width, between text and video */
+}
+
+.message:has(.audio-container) .message-content {
+  max-width: 100%;
+  min-width: 220px;
+  width: 100%;
+}
+
+/* ==============================================
+   RESPONSIVE ADJUSTMENTS - Mobile-first
+   ============================================== */
+
+/* Extra small phones (portrait) - up to ~390px (iPhone SE, etc.) */
+@media (max-width: 390px) {
+  body {
+    font-size: 0.95rem; /* Slightly smaller base font */
+  }
+
+  header {
+    padding: 10px 14px;
+  }
+
+  h1 {
+    font-size: 1.3rem;
+  }
+
+  .chat-container {
+    padding: 12px 14px;
+    gap: 0.8rem;
+  }
+
+  .message {
+    max-width: 92%;          /* Even wider on tiny screens */
+    gap: 8px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .message-content {
+    padding: 10px 14px;
+    max-width: calc(100% - 50px);
+  }
+
+  .input-area {
+    padding: 12px 14px;
+  }
+
+  #comment {
+    font-size: 0.95rem;
+    padding: 12px 16px;
+  }
+
+  button {
+    width: 46px;
+    height: 46px;
+    font-size: 1.1rem;
+  }
+
+  .media-content img,
+  .media-content video {
+    max-height: 240px;      /* Smaller media on very small screens */
+  }
+
+  .video-container iframe {
+    min-height: 160px;
+  }
+
+  .audio-container iframe {
+    height: 70px;
+  }
+}
+
+/* Small phones & typical mobile landscape (up to ~480-500px) */
+@media (max-width: 500px) {
+  .header-content {
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+  }
+
+  .header-content > div:last-child {
+    gap: 12px;
+  }
+
+  .message {
+    max-width: 90%;
+  }
+
+  .name {
+    font-size: 0.85rem;
+  }
+
+  .time {
+    font-size: 0.68rem;
+  }
+
+  .msg-actions {
+    font-size: 0.7rem;
+  }
+
+  .input-wrapper {
+    gap: 8px;
+  }
+
+  #preview-bar,
+  #reply-preview {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+  }
+
+  #preview-bar img,
+  #preview-bar video {
+    height: 45px;
+  }
+}
+
+/* General mobile adjustments (up to tablets ~767px) */
+@media (max-width: 767px) {
+  body {
+    overflow: hidden; /* already have, but reinforce */
+  }
+
+  .chat-container {
+    padding: 16px;
+  }
+
+  .message {
+    max-width: 88%;           /* Wider bubbles on mobile */
+  }
+
+  .message.own {
+    max-width: 90%;
+  }
+
+  .message:has(.video-container) {
+    max-width: 96%;
+  }
+
+  .message:has(.audio-container) {
+    max-width: 92%;
+  }
+
+  .message-content {
+    border-radius: 16px;
+  }
+
+  .message.own .message-content {
+    border-radius: 16px;
+  }
+
+  .video-container iframe {
+    max-height: 55vh;         /* Prevent huge videos on mobile */
+  }
+
+  .input-area {
+    padding: 14px 16px;
+  }
+
+  #comment {
+    font-size: 1rem;
+  }
+
+  /* Hide or shrink less important elements if needed */
+  .header-content > div:first-child h1 {
+    font-size: 1.4rem;
+  }
+}
+
+/* Tablets & small landscape phones (optional fine-tuning) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .chat-container {
+    padding: 24px;
+  }
+
+  .message {
+    max-width: 80%;           /* Back to original on tablets */
+  }
+}
+
+/* Optional: Prevent zoom issues & improve touch targets */
+@media (max-width: 767px) {
+  button,
+  .action-btn {
+    min-width: 44px;           /* iOS Human Interface Guidelines touch target */
+    min-height: 44px;
+  }
+
+  input,
+  textarea,
+  button {
+    font-size: 16px;           /* Prevent iOS zoom on focus */
+  }
+}
+
+/* Fix for iOS Safari – respects notch, dynamic island, home indicator */
+@supports (padding-top: env(safe-area-inset-top)) {
+  header {
+    padding-top: calc(14px + env(safe-area-inset-top));
+  }
+  .input-area {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Prevent last messages from being hidden under the input bar */
+.chat-container {
+  padding-bottom: 90px;           /* ← add or increase this value */
+}
+
+
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<header>
+  <div class="header-content">
+    <!-- Your Own Profile Picture (circular, in navbar) -->
+      <div style="position: relative;">
+        <img  
+          id="user-avatar" 
+          src="" 
+          class="avatar" 
+          alt="You" 
+          style="width: 38px; height: 38px; cursor: pointer; border: 2px solid #60a5fa;"
+          onerror="this.src='https://via.placeholder.com/38?text=@';"
+        >
+      </div>
+ <button type="button" id="installAppBtn" style="
+  background: transparent; 
+  border: 1px solid rgba(255,255,255,0.3); 
+  margin-top: 10px; 
+  box-shadow: none;
+  font-size: 0.9rem;
+  padding: 12px;
+">
+  <i class="fas fa-download" style="margin-right: 8px;"></i> Install App
+</button>
+<div id="installModal" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter:blur(3px);
+  z-index:9999;
+  justify-content:center;
+  align-items:center;
+">
+  <div style="
+    background: rgba(30,41,59,0.95);
+    padding: 24px;
+    border-radius: 16px;
+    max-width: 320px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+  ">
+    <h2 style="margin-bottom:12px; color:#60a5fa; font-size: 1.25rem;">Install App?</h2>
+    <p style="margin-bottom:20px; font-size:0.9rem; color:#cbd5e1;">
+      Install Riverside Connect for a faster experience and easier access.
+    </p>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+     <button type="button" id="installYes" style="
+        flex: 1;
+        padding:12px;
+        background:#3b82f6;
+        color:white;
+        border:none;
+        border-radius:12px;
+        font-weight:600;
+        cursor:pointer;
+        margin-top: 0;
+      ">Yes</button>
+     <button type="button" id="installNo" style="
+        flex: 1;
+        padding:12px;
+        background:rgba(255,255,255,0.1);
+        color:white;
+        border:1px solid rgba(255,255,255,0.2);
+        border-radius:12px;
+        font-weight:600;
+        cursor:pointer;
+        margin-top: 0;
+      ">Cancel</button>
+    </div>
+  </div>
+</div>
+     
+    <h1>Chat Room</h1>
+
+ 
+
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <!-- Live users count -->
+      <div style="font-size:0.9rem; color:#94a3b8;">
+        <i class="fas fa-users"></i> Live
+      </div>
+      
+      <!-- Notification Bell -->
+      <div style="position: relative;">
+        <a href="announce.html" style="color: #60a5fa; font-size: 1.5rem; text-decoration: none;">
+          <i class="fas fa-bell"></i>
+          <span id="ann-badge" style="
+            position: absolute;
+            top: -6px;
+            right: -10px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.68rem;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.8);
+            display: none;
+          ">0</span>
+        </a>
+      </div>
+
+     
+    </div>
+  </div>
+</header>
+  <div class="chat-container" id="comments"></div>
+
+ <div id="preview-bar">
+  <div id="file-preview-container"></div>
+  <button id="removeFile" style="width:30px; height:30px; background:#ef4444; font-size:0.8rem;">
+    <i class="fas fa-times"></i>
+  </button>
+</div>
+
+<div id="reply-preview">
+  <div class="reply-info" id="reply-text">Replying to...</div>
+  <button onclick="cancelReply()" style="width:24px; height:24px; background:none; color:#ef4444;"><i class="fas fa-times"></i></button>
+</div>
+
+<div class="input-area">
+  <div class="input-wrapper">
+    <input type="file" id="fileInput" accept="image/*,video/*,audio/*" style="display:none;">
+    
+    <button type="button" id="addFileBtn" style="background:none; box-shadow:none; color:#60a5fa; width:40px;">
+      <i class="fas fa-plus-circle"></i>
+    </button>
+
+    <input type="text" id="comment" placeholder="Type your message..." autocomplete="off">
+    
+    <button type="submit" id="sendBtn">
+      <i class="fas fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+
+<!-- Profile Modal – Modern & Styled (updated: direct avatar replacement) -->
+<div id="profile-modal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.85); backdrop-filter:blur(12px); z-index:2000; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:rgba(30,41,59,0.95); width:100%; max-width:420px; border-radius:24px; padding:28px; border:1px solid rgba(96,165,250,0.3); box-shadow:0 20px 80px rgba(0,0,0,0.7); animation:fadeIn 0.4s ease;">
+   
+    <h2 style="text-align:center; color:#60a5fa; margin:0 0 28px 0; font-size:1.6rem; font-weight:700; letter-spacing:0.5px;">Your Profile</h2>
+   
+    <!-- Avatar Section with Camera Overlay -->
+    <div style="position:relative; width:160px; height:160px; margin:0 auto 32px; border-radius:50%; overflow:hidden; border:4px solid #60a5fa; box-shadow:0 8px 30px rgba(59,130,246,0.4);">
+      <img id="modal-avatar"
+           src=""
+           style="width:100%; height:100%; object-fit:cover; transition:opacity 0.3s ease;">
+      <label for="modal-avatar-input"
+             style="position:absolute; inset:0; background:linear-gradient(135deg, rgba(59,130,246,0.75), rgba(96,165,250,0.75)); opacity:0; transition:opacity 0.3s; display:flex; align-items:center; justify-content:center; cursor:pointer; color:white; font-size:2.2rem;">
+        <i class="fas fa-camera"></i>
+      </label>
+      <input type="file" id="modal-avatar-input" accept="image/*" style="display:none;">
+    </div>
+
+
+
+    <!-- Hover effect for camera -->
+    <style>
+     #profile-modal > div {
+  background: rgba(30,41,59,0.95);
+  width: 95%;      /* Changed from 100% to 95% to give a tiny margin */
+  max-width: 420px;
+  border-radius: 24px;
+  padding: 20px;   /* Reduced padding for mobile */
+  box-sizing: border-box; /* Ensures padding doesn't add to width */
+  margin: auto;    /* Centers it */
+}
+
+/* Make modal scrollable on small screens */
+#profile-modal {
+  overflow-y: auto;               /* ← key: allows scrolling the whole modal if needed */
+  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+  padding: 16px;                  /* already have, but reinforcing */
+}
+
+/* Main content wrapper inside modal – this is what actually scrolls */
+#profile-modal > div {
+  max-height: 85vh;               /* ← prevents it from being taller than ~85% of screen */
+  overflow-y: auto;               /* ← enables vertical scroll when content overflows */
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;                  /* reduced from 28px for better mobile fit */
+  box-sizing: border-box;
+}
+
+/* Optional: Add subtle scrollbar styling (modern browsers) */
+#profile-modal > div::-webkit-scrollbar {
+  width: 6px;
+}
+#profile-modal > div::-webkit-scrollbar-track {
+  background: transparent;
+}
+#profile-modal > div::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.4);
+  border-radius: 3px;
+}
+    </style>
+
+    <!-- Name Input -->
+    <div style="margin-bottom:32px;">
+      <label style="display:block; color:#94a3b8; margin-bottom:10px; font-size:1rem; font-weight:500;">Display Name</label>
+      <input type="text" id="modal-name-input"
+             style="width:100%; padding:14px 18px; border-radius:14px; background:rgba(255,255,255,0.08); border:1px solid #60a5fa; color:white; font-size:1.1rem; outline:none; transition:all 0.3s;">
+      <div id="modal-error" style="color:#f87171; font-size:0.9rem; margin-top:10px; min-height:22px;"></div>
+    </div>
+
+    <!-- Recovery Code Section -->
+<div style="margin: 32px 0; padding: 16px; background: rgba(96,165,250,0.08); border-radius: 12px; border: 1px solid rgba(96,165,250,0.25);">
+  <label style="display:block; color:#94a3b8; margin-bottom:8px; font-size:0.95rem; font-weight:500;">
+    Your Recovery Code
+  </label>
+  <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <code id="recovery-code-display" style="font-family:monospace; background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:8px; color:#e2e8f0; letter-spacing:0.5px; font-size:1.1rem;">
+      Loading...
+    </code>
+    <button id="copy-recovery-btn" style="padding:8px 14px; background:#3b82f6; color:white; border:none; border-radius:8px; cursor:pointer; font-size:0.9rem; font-weight:500;">
+      Copy
+    </button>
+  </div>
+  <p style="margin-top:10px; font-size:0.82rem; color:#94a3b8; line-height:1.4;">
+    Save this code somewhere safe. Use it to recover your account if you lose access or reinstall the app.
+  </p>
+</div>
+    <!-- Buttons -->
+    <div style="display:flex; gap:16px;">
+      <button id="modal-cancel-btn"
+              style="flex:1; padding:14px; border-radius:14px; background:#334155; color:#e2e8f0; border:none; font-weight:600; cursor:pointer; font-size:1rem; transition:all 0.3s;">
+        Cancel
+      </button>
+      <button id="modal-save-btn"
+              style="flex:1; padding:14px; border-radius:14px; background:linear-gradient(135deg,#3b82f6,#60a5fa); color:white; border:none; font-weight:600; cursor:pointer; font-size:1rem; transition:all 0.3s;">
+        Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+<!-- just before </body> -->
+<a href="members.html" style="
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: white;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 6px 20px rgba(59,130,246,0.5);
+  z-index: 100;
+  text-decoration: none;
+">
+  <i class="fas fa-users"></i>
+</a>
+ <script>
+  const scriptUrl = 'https://script.google.com/macros/s/AKfycbzMXrqzu0JPQ0u4E00YmSh30qlMqV5j-eINV99Zo8qp6mrgAko6uaKiOrHyWNGT5RVe/exec';
+
+ let userName = localStorage.getItem('userName');
+
+  if (!userName) {
+    window.location.href = 'login.html';
+  }
+  // Load your own profile picture into the navbar
+const userAvatarImg = document.getElementById('user-avatar');
+const storedPicLink = localStorage.getItem('userPicLink');
+
+if (storedPicLink) {
+  const id = extractFileId(storedPicLink);
+  userAvatarImg.src = id ? `https://lh3.googleusercontent.com/d/${id}` : storedPicLink;
+} else {
+  // Fallback if no pic saved yet
+  userAvatarImg.src = 'https://via.placeholder.com/38?text=@';
+}
+
+  const commentsDiv = document.getElementById('comments');
+  const commentInput = document.getElementById('comment');
+  const sendBtn = document.getElementById('sendBtn');
+  
+  // New elements for file handling
+  const fileInput = document.getElementById('fileInput');
+  const addFileBtn = document.getElementById('addFileBtn');
+  const previewBar = document.getElementById('preview-bar');
+  const previewContainer = document.getElementById('file-preview-container');
+  const removeFileBtn = document.getElementById('removeFile');
+
+  let lastCommentCount = 0;
+  let pollingInterval = null;
+  let selectedFileData = null;
+  let lastSeenAnnCount = parseInt(localStorage.getItem('lastSeenAnnCount') || '0');
+  let replyingTo = null; // Stores { name: string, text: string }
+
+  // Trigger file picker
+  if(addFileBtn) addFileBtn.addEventListener('click', () => fileInput.click());
+
+  // Handle file selection and local preview
+ fileInput.addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    selectedFileData = {
+      base64: e.target.result.split(',')[1],
+      type: file.type,
+      name: file.name
+    };
+
+    let previewHtml = '';
+    if (file.type.startsWith('video')) {
+      previewHtml = `<video src="${e.target.result}" style="height:50px; border-radius:4px;" muted></video>`;
+    } else if (file.type.startsWith('audio')) {
+      previewHtml = `<audio src="${e.target.result}" style="height:50px; width:150px;" controls></audio>`;
+    } else {
+      previewHtml = `<img src="${e.target.result}" style="height:50px; border-radius:4px;">`;
+    }
+
+    previewContainer.innerHTML = previewHtml;
+    previewBar.style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+});
+
+  removeFileBtn.addEventListener('click', () => {
+    selectedFileData = null;
+    fileInput.value = '';
+    previewBar.style.display = 'none';
+  });
+
+  // ─── Modern Profile Modal – Direct Avatar Update in Circle ────────────────
+
+const profileModal     = document.getElementById('profile-modal');
+const modalAvatar      = document.getElementById('modal-avatar');
+const modalNameInput   = document.getElementById('modal-name-input');
+const modalError       = document.getElementById('modal-error');
+const modalSaveBtn     = document.getElementById('modal-save-btn');
+const modalCancelBtn   = document.getElementById('modal-cancel-btn');
+const modalAvatarInput = document.getElementById('modal-avatar-input');
+
+let selectedAvatarFile = null;
+
+function openProfileModal() {
+  modalNameInput.value = userName || '';
+  modalAvatar.src = userAvatarImg.src;
+  modalAvatar.style.opacity = '1';
+  modalError.textContent = '';
+  selectedAvatarFile = null;
+  profileModal.style.display = 'flex';
+  modalAvatarInput.value = '';
+
+  // ── NEW: Show recovery code ───────────────────────────────────────
+  const recoveryCode = localStorage.getItem('userIdCode') || 'Not found';
+  document.getElementById('recovery-code-display').textContent = recoveryCode;
+
+  // Optional: Make it look disabled/secure if no code exists
+  if (!localStorage.getItem('userIdCode')) {
+    document.getElementById('recovery-code-display').style.color = '#f87171';
+    document.getElementById('recovery-code-display').textContent = 'No recovery code saved';
+  }
+}
+
+function closeProfileModal() {
+  profileModal.style.display = 'none';
+  modalError.textContent = '';
+  selectedAvatarFile = null;
+  modalAvatarInput.value = '';
+  modalAvatar.style.opacity = '1';
+}
+
+userAvatarImg.addEventListener('click', openProfileModal);
+modalCancelBtn.addEventListener('click', closeProfileModal);
+
+profileModal.addEventListener('click', e => {
+  if (e.target === profileModal) closeProfileModal();
+});
+
+// ─── When user selects new image → immediately show it in the circle ─────
+modalAvatarInput.addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    modalError.textContent = "Please select an image file";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    selectedAvatarFile = {
+      base64: ev.target.result.split(',')[1],
+      type:   file.type,
+      name:   file.name
+    };
+
+    // Directly update the circular avatar preview
+    modalAvatar.src = ev.target.result;
+    modalAvatar.style.opacity = '1';
+    modalError.textContent = '';
+  };
+  reader.readAsDataURL(file);
+});
+
+// ─── Save name and/or avatar ─────────────────────────────────────────────
+modalSaveBtn.addEventListener('click', async () => {
+  const newName = (modalNameInput.value || '').trim();
+  const nameChanged = newName && newName !== userName;
+  const avatarChanged = !!selectedAvatarFile;
+
+  if (!nameChanged && !avatarChanged) {
+    closeProfileModal();
+    return;
+  }
+
+  if (nameChanged && newName.length < 2) {
+    modalError.textContent = "Name must be at least 2 characters";
+    return;
+  }
+
+  modalSaveBtn.disabled = true;
+  modalError.textContent = "Saving...";
+
+  try {
+    const payload = { operation: 'updateProfile', oldName: userName };
+    if (nameChanged) payload.newName = newName;
+    if (avatarChanged) {
+      payload.imageData = selectedAvatarFile.base64;
+      payload.imageName = selectedAvatarFile.name;
+    }
+
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    const result = await res.json();
+
+    if (result.status === 'success') {
+      if (nameChanged) {
+        localStorage.setItem('userName', result.newName || newName);
+        userName = result.newName || newName;
+      }
+
+      if (avatarChanged && result.picLink) {
+        localStorage.setItem('userPicLink', result.picLink);
+
+        const src = result.picLink.includes('http')
+          ? result.picLink
+          : `https://lh3.googleusercontent.com/d/${extractFileId(result.picLink)}`;
+
+        // Update both the top-right navbar avatar and modal avatar
+        userAvatarImg.src = src;
+        modalAvatar.src = src;
+      }
+
+      showToast("Profile updated successfully");
+      closeProfileModal();
+      loadComments(false); // Refresh avatars & names in chat
+    } else {
+      modalError.textContent = result.message || "Update failed";
+    }
+  } catch (err) {
+    modalError.textContent = "Connection error – try again";
+    console.error(err);
+  } finally {
+    modalSaveBtn.disabled = false;
+  }
+});
+  function scrollToBottom(force = false) {
+    const isNearBottom = Math.abs(commentsDiv.scrollHeight - commentsDiv.clientHeight - commentsDiv.scrollTop) < 150;
+    if (force || isNearBottom) {
+      commentsDiv.scrollTop = commentsDiv.scrollHeight;
+    }
+  }
+
+  function extractFileId(url) {
+    if (!url) return '';
+    const match = url.match(/[-\w]{25,}/);
+    return match ? match[0] : '';
+  }
+
+  // Use lh3 for rendering Drive images/videos
+  function getLh3Link(url) {
+    const id = extractFileId(url);
+    return id ? `https://lh3.googleusercontent.com/d/${id}` : '';
+  }
+
+ // Check approval status on load
+async function checkUserStatus() {
+  try {
+    const res = await fetch(`${scriptUrl}?operation=getUserStatus&name=${encodeURIComponent(userName)}`);
+    const data = await res.json();
+
+    if (data.status !== 'success') {
+      showToast("Cannot check account status", "error");
+      return;
+    }
+
+    const userStatus = data.userStatus.toLowerCase();
+    isApproved = (userStatus === 'approved');  // Update global flag
+
+    // ── Common elements ──
+    const bellLink = document.querySelector('a[href="announce.html"]');
+    const membersFab = document.querySelector('a[href="members.html"]');
+
+    if (isApproved) {
+      // Approved → normal behavior
+      loadComments(false);
+      startPolling();
+      commentInput.focus();
+
+      // Ensure bell & members button visible
+      if (bellLink) bellLink.style.display = 'block';
+      if (membersFab) membersFab.style.display = 'flex';
+    } else {
+      // Not approved → restricted view + lock everything down
+      const commentsDiv = document.getElementById('comments');
+      commentsDiv.innerHTML = `
+        <div style="
+          text-align: center;
+          padding: 60px 20px 120px;
+          color: #cbd5e1;
+          font-size: 1.1rem;
+          line-height: 1.7;
+          max-width: 700px;
+          margin: 0 auto;
+        ">
+          <h2 style="color: #60a5fa; margin-bottom: 24px; font-size: 2rem;">
+            Welcome to Riverside Service
+          </h2>
+          
+          <p style="margin-bottom: 20px;">
+            Hello <strong>${userName}</strong>!
+          </p>
+
+          <p style="margin: 0 0 32px; font-size: 1.05rem;">
+            Your account is currently 
+            <strong style="color: ${userStatus === 'pending' ? '#f59e0b' : '#ef4444'}">
+              ${userStatus === 'pending' ? 'awaiting approval' : 'not active'}
+            </strong>.
+          </p>
+
+         <div style="
+  background: rgba(30,41,59,0.7);
+  border-left: 5px solid #60a5fa;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 24px auto;
+  max-width: 92vw;
+  box-sizing: border-box;
+  overflow: hidden;
+">
+
+  <h3 style="
+    color: #60a5fa;
+    margin: 0 0 20px;
+    text-align: center;
+    font-size: 1.4rem;
+  ">
+    Guide to Christian Salvation
+  </h3>
+
+  <!-- Swipable container -->
+  <div style="
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #60a5fa #1e293b40;
+    padding-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    scroll-padding: 12px;
+  ">
+
+    <!-- Slide 1 -->
+    <div style="
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      background: rgba(15,23,42,0.5);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #33415566;
+      box-sizing: border-box;
+    ">
+      <img src="free.png"
+           alt="All have sinned"
+           style="width: 100%; height: auto; display: block; max-height: 45vh; object-fit: cover;">
+      <div style="padding: 16px 14px 20px;">
+        <div style="font-weight: bold; color: #60a5fa; font-size: 1.15rem; margin-bottom: 10px;">
+          Romans 3:23
+        </div>
+        <p style="color: #d1d5db; margin: 0; line-height: 1.55; font-size: 0.97rem;">
+          “For all have sinned and fall short of the glory of God.”<br><br>
+          We are all sinners — separated from God by our wrongdoings.
+        </p>
+      </div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div style="
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      background: rgba(15,23,42,0.5);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #33415566;
+      box-sizing: border-box;
+    ">
+      <img src="Christ.png"
+           alt="Christ died for us"
+           style="width: 100%; height: auto; display: block; max-height: 45vh; object-fit: cover;">
+      <div style="padding: 16px 14px 20px;">
+        <div style="font-weight: bold; color: #60a5fa; font-size: 1.15rem; margin-bottom: 10px;">
+          Romans 5:8
+        </div>
+        <p style="color: #d1d5db; margin: 0; line-height: 1.55; font-size: 0.97rem;">
+          “But God demonstrates his own love for us in this: While we were still sinners, Christ died for us.”<br><br>
+          Jesus paid our penalty — He died in our place.
+        </p>
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div style="
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      background: rgba(15,23,42,0.5);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #33415566;
+      box-sizing: border-box;
+    ">
+      <img src="life.png"
+           alt="Believe in Jesus"
+           style="width: 100%; height: auto; display: block; max-height: 45vh; object-fit: cover;">
+      <div style="padding: 16px 14px 20px;">
+        <div style="font-weight: bold; color: #60a5fa; font-size: 1.15rem; margin-bottom: 10px;">
+          John 3:16
+        </div>
+        <p style="color: #d1d5db; margin: 0; line-height: 1.55; font-size: 0.97rem;">
+          “For God so loved the world that he gave his one and only Son...”<br><br>
+          Believe in Jesus — receive His gift of eternal life.
+        </p>
+      </div>
+    </div>
+
+    <!-- Slide 4 -->
+    <div style="
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      background: rgba(15,23,42,0.5);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #33415566;
+      box-sizing: border-box;
+    ">
+      <img src="declare.png"
+           alt="New life in Christ"
+           style="width: 100%; height: auto; display: block; max-height: 45vh; object-fit: cover;">
+      <div style="padding: 16px 14px 20px;">
+        <div style="font-weight: bold; color: #60a5fa; font-size: 1.15rem; margin-bottom: 10px;">
+          Romans 10:9
+        </div>
+        <p style="color: #d1d5db; margin: 0; line-height: 1.55; font-size: 0.97rem;">
+          “If you declare with your mouth, ‘Jesus is Lord,’ and believe in your heart... you will be saved.”<br><br>
+          Confess Jesus as Lord — be born again.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hint that it's swipeable -->
+  <div style="
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-top: 10px;
+    font-style: italic;
+    opacity: 0.8;
+  ">
+    ← Swipe to learn more →
+  </div>
+
+  <p style="
+    margin-top: 28px;
+    font-style: italic;
+    color: #94a3b8;
+    text-align: center;
+    font-size: 0.95rem;
+  ">
+    “Everyone who calls on the name of the Lord will be saved.”  
+    – Romans 10:13
+  </p>
+
+  <p style="
+    margin-top: 32px;
+    font-size: 0.95rem;
+    color: #94a3b8;
+    text-align: center;
+  ">
+    Once approved, you'll gain full access to live discussions, announcements, and more.<br>
+    Thank you for your patience — God bless you!
+  </p>
+
+</div>
+      `;
+
+      // Hide bell
+      if (bellLink) bellLink.style.display = 'none';
+
+      // Members button stays visible
+
+      // Lock input area
+      commentInput.disabled = true;
+      commentInput.placeholder = "Account not yet approved...";
+      commentInput.style.opacity = '0.5';
+      sendBtn.disabled = true;
+      sendBtn.style.opacity = '0.4';
+      addFileBtn.disabled = true;
+      addFileBtn.style.opacity = '0.4';
+
+      // Immediately stop any existing polling
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+
+      showToast("Your account is awaiting approval", "info");
+    }
+  } catch (err) {
+    console.error("Status check failed:", err);
+    showToast("Could not verify your account status", "error");
+
+    // Fallback
+    document.getElementById('comments').innerHTML = '<p style="text-align:center;padding:80px;color:#f87171;">Error loading account status. Please try again later.</p>';
+    commentInput.disabled = true;
+    sendBtn.disabled = true;
+    addFileBtn.disabled = true;
+  }
+}
+
+// Run this FIRST — before anything else tries to load chat
+checkUserStatus();
+  async function loadComments(silent = true) {
+    try {
+      const response = await fetch(`${scriptUrl}?operation=getData`);
+      const data = await response.json();
+
+      if (silent && data.comments.length === lastCommentCount) return;
+      
+      lastCommentCount = data.comments.length;
+      const wasAtBottom = Math.abs(commentsDiv.scrollHeight - commentsDiv.clientHeight - commentsDiv.scrollTop) < 150;
+
+      commentsDiv.innerHTML = '';
+
+      data.comments.reverse().forEach(c => {
+        const isOwn = c.name === userName;
+        const mediaLink = getLh3Link(c.fileLink); // Fetch using lh3
+        if (data.announcements) {
+  updateAnnBadge(data.announcements.length);
+}
+        
+        let mediaHtml = '';
+if (mediaLink) {
+  // Video: Use iframe for Drive preview
+  if (c.fileLink.toLowerCase().match(/\.(mp4|mov|webm|m4v)$/i) || 
+      (c.fileType && c.fileType.includes('video'))) {
+    const previewUrl = c.fileLink;  // "https://drive.google.com/file/d/ID/preview"
+    mediaHtml = `
+      <div class="video-container">
+        <iframe 
+          src="${previewUrl}"
+          allowfullscreen
+          allow="autoplay; fullscreen; picture-in-picture"
+          loading="lazy"
+        ></iframe>
+      </div>`;
+  } 
+  // Audio: Use iframe for Drive audio player preview (adjust height)
+  else if (c.fileLink.toLowerCase().match(/\.(mp3|wav|ogg|aac|m4a)$/i) || 
+           (c.fileType && c.fileType.includes('audio'))) {
+    const previewUrl = c.fileLink;  // Same /preview URL works for audio
+    mediaHtml = `
+      <div class="audio-container">
+        <iframe 
+          src="${previewUrl}"
+          allow="autoplay"
+          loading="lazy"
+          style="height:80px;"  // Shorter for audio
+        ></iframe>
+      </div>`;
+  } 
+  // Images: Existing logic
+  else {
+    mediaHtml = `<div class="media-content"><img src="${mediaLink}" style="max-width:100%; border-radius:8px; margin-top:8px;" loading="lazy"></div>`;
+  }
+
+        }
+
+        const msg = document.createElement('div');
+        msg.className = `message ${isOwn ? 'own' : ''}`;
+       // Inside the forEach loop of loadComments:
+// 1. IMPROVED ACTIONS: Show 'Reply' for everyone, but 'Edit/Delete' only for own messages
+const actionsHtml = `
+  <div class="msg-actions">
+    <button class="action-btn reply-btn" onclick="setReply('${c.name}', '${c.comment.replace(/'/g, "\\'")}')">
+      <i class="fas fa-reply"></i> Reply
+    </button>
+    ${isOwn ? `
+      <button class="action-btn edit-btn" onclick="startEdit('${c.timestamp}', '${c.comment.replace(/'/g, "\\'")}')">
+        <i class="fas fa-edit"></i> Edit
+      </button>
+      <button class="action-btn delete-btn" onclick="deleteMsg('${c.timestamp}')">
+        <i class="fas fa-trash"></i> Delete
+      </button>
+    ` : ''}
+  </div>
+`;
+
+// Check if this comment is a reply
+const replyHtml = c.replyTo ? `
+  <div class="quoted-msg">
+    <b>@${c.replyTo.name}</b>: ${c.replyTo.text.substring(0, 50)}${c.replyTo.text.length > 50 ? '...' : ''}
+  </div>
+` : '';
+
+// 2. CLEANER BUBBLE: No more onclick on the container
+msg.innerHTML = `
+  <img src="https://lh3.googleusercontent.com/d/${extractFileId(c.picLink)}" class="avatar">
+  <div class="message-content">
+    <div class="name">${c.name}</div>
+    ${replyHtml} 
+    ${mediaHtml}
+    <div class="text" id="text-${c.timestamp}">${c.comment}</div>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <span class="time">${formatSmartTime(c.timestamp)}</span>
+      ${actionsHtml}
+    </div>
+  </div>
+`;
+        commentsDiv.appendChild(msg);
+      });
+
+      if (!silent || wasAtBottom) scrollToBottom(true);
+    } catch (err) {
+      console.error('Failed to load messages:', err);
+    }
+  }
+
+  function setReply(name, text) {
+  replyingTo = { name, text };
+  document.getElementById('reply-text').innerHTML = `Replying to <b>${name}</b>`;
+  document.getElementById('reply-preview').style.display = 'flex';
+  commentInput.focus();
+}
+
+function cancelReply() {
+  replyingTo = null;
+  document.getElementById('reply-preview').style.display = 'none';
+}
+
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> <span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3000);
+}
+async function deleteMsg(timestamp) {
+  // Create a custom app-styled overlay
+  const overlay = document.createElement('div');
+  overlay.style = "position:fixed; inset:0; background:rgba(15, 23, 42, 0.8); backdrop-filter:blur(8px); z-index:2000; display:flex; align-items:center; justify-content:center; animation: fadeIn 0.2s ease;";
+  
+  overlay.innerHTML = `
+    <div style="background:#1e293b; padding:24px; border-radius:16px; border:1px solid rgba(96, 165, 250, 0.2); text-align:center; max-width:300px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+      <p style="margin-bottom:8px; font-weight:600; color:#f87171; font-size:1.1rem;">Delete Message?</p>
+      <p style="margin-bottom:24px; color:#94a3b8; font-size:0.9rem;">This action cannot be undone.</p>
+      <div style="display:flex; gap:10px;">
+        <button id="cancelDel" style="flex:1; padding:10px; border-radius:8px; border:none; background:#334155; color:white; cursor:pointer; font-weight:600;">Cancel</button>
+        <button id="confirmDel" style="flex:1; padding:10px; border-radius:8px; border:none; background:#ef4444; color:white; cursor:pointer; font-weight:600;">Delete</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Button Logic
+  overlay.querySelector('#cancelDel').onclick = () => overlay.remove();
+  
+  overlay.querySelector('#confirmDel').onclick = async () => {
+    overlay.remove(); // Close modal immediately for smooth UX
+    try {
+      const res = await fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          operation: 'deleteComment',
+          name: userName,
+          timestamp: timestamp
+        })
+      });
+      const result = await res.json();
+      if (result.status === 'success') {
+        showToast("Message deleted");
+        loadComments(false);
+      } else {
+        showToast(result.message || "Delete failed", "error");
+      }
+    } catch (err) { 
+      showToast("Connection error", "error"); 
+    }
+  };
+}
+
+function startEdit(timestamp) {
+  const textElement = document.getElementById(`text-${timestamp}`);
+  const originalText = textElement.innerText;
+  
+  // Transform the text bubble into an inline editor
+  textElement.innerHTML = `
+    <textarea class="edit-input" id="edit-field-${timestamp}">${originalText}</textarea>
+    <div class="edit-controls">
+      <button class="action-btn" style="background:#22c55e" onclick="saveEdit('${timestamp}')">Save</button>
+      <button class="action-btn" onclick="loadComments(false)">Cancel</button>
+    </div>
+  `;
+  
+  // Focus the cursor at the end of the text
+  const input = document.getElementById(`edit-field-${timestamp}`);
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+}
+
+async function saveEdit(timestamp) {
+  const newText = document.getElementById(`edit-field-${timestamp}`).value.trim();
+  if (!newText) return;
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({
+        operation: 'editComment',
+        name: userName,
+        timestamp: timestamp,
+        newText: newText
+      })
+    });
+    const result = await res.json();
+    if (result.status === 'success') {
+      showToast("Message updated");
+      loadComments(false);
+    } else {
+      showToast(result.message || "Update failed", "error");
+    }
+  } catch (err) { 
+    showToast("Connection error", "error"); 
+  }
+}
+ async function sendMessage() {
+  const text = commentInput.value.trim();
+  if (!text && !selectedFileData) return;
+
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({
+        operation: 'postComment',
+        name: userName,
+        comment: text,
+        file: selectedFileData,
+        replyTo: replyingTo // ADD THIS LINE
+      })
+    });
+
+    const result = await res.json();
+    if (result.status === 'success') {
+      commentInput.value = '';
+      cancelReply(); // ADD THIS LINE
+      if(selectedFileData) removeFileBtn.click();
+      await loadComments(false);
+    } else {
+        showToast(result.message || 'Failed to send', 'error');
+      }
+    } catch (err) {
+     showToast('Network error', 'error');
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  commentInput.addEventListener('keypress', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  
+  function formatSmartTime(timestamp) {
+  const date = new Date(timestamp);
+  const now = new Date();
+  
+  const isToday = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  
+  let dayPart;
+  if (isToday) dayPart = "Today";
+  else if (isYesterday) dayPart = "Yesterday";
+  else dayPart = date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  
+  const timePart = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  return `${dayPart} • ${timePart}`;
+}
+
+async function updateAnnBadge() {
+    const badge = document.getElementById('ann-badge');
+
+    try {
+        // Primary method: get real unseen count from server
+        const res = await fetch(`${scriptUrl}?operation=getUnseenAnnCount&name=${encodeURIComponent(userName)}`);
+        const data = await res.json();
+
+        if (data.status === 'error') throw new Error(data.message || 'Server error');
+
+        const unseen = data.unseenCount || 0;
+
+        if (unseen > 0) {
+            badge.textContent = unseen > 99 ? '99+' : unseen;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+
+        // Keep localStorage in sync as fallback / offline support
+        localStorage.setItem('lastSeenAnnCount', data.seenUpTo || 0);
+
+    } catch (err) {
+        console.warn('Could not fetch unseen count → using local fallback', err);
+
+        // Fallback: old localStorage method (still works if server is down)
+        const totalResponse = await fetch(`${scriptUrl}?operation=getData`).catch(() => null);
+        let total = 0;
+        if (totalResponse?.ok) {
+            const data = await totalResponse.json();
+            total = data.announcements?.length || 0;
+        }
+
+        const lastSeen = parseInt(localStorage.getItem('lastSeenAnnCount') || '0', 10);
+        const unseen = Math.max(0, total - lastSeen);
+
+        if (unseen > 0) {
+            badge.textContent = unseen > 99 ? '99+' : unseen;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+  function startPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(() => loadComments(true), 8000);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (pollingInterval) clearInterval(pollingInterval);
+  } else {
+    // Only reload/poll if user is approved
+    if (isApproved) {
+      loadComments(true);
+      startPolling();
+    }
+    // If not approved → do nothing, keep showing welcome message
+  }
+});
+
+// Initial polling only if approved (but checkUserStatus already handles it)
+
+  if (!document.hidden) startPolling();
+  commentInput.focus();
+
+
+  // Copy recovery code button
+document.getElementById('copy-recovery-btn')?.addEventListener('click', () => {
+  const codeElement = document.getElementById('recovery-code-display');
+  const codeText = codeElement.textContent.trim();
+
+  if (codeText === 'Not found' || codeText === 'No recovery code saved') {
+    showToast("No recovery code available", "error");
+    return;
+  }
+
+  navigator.clipboard.writeText(codeText)
+    .then(() => {
+      showToast("Recovery code copied to clipboard!");
+      // Optional: visual feedback
+      codeElement.style.background = 'rgba(34,197,94,0.2)';
+      setTimeout(() => {
+        codeElement.style.background = 'rgba(0,0,0,0.3)';
+      }, 1200);
+    })
+    .catch(err => {
+      showToast("Failed to copy – please select manually", "error");
+      console.error(err);
+    });
+});
+</script>
+<script>
+ if ('serviceWorker' in navigator) {
+  // Use './' to stay inside the /The-Riverside-Connect/ subfolder
+  navigator.serviceWorker.register('./sw.js', { scope: './' })
+    .then(reg => console.log('✅ SW registered in subfolder scope'))
+    .catch(err => console.error('❌ SW registration failed:', err));
+}
+</script>
+<script>
+  let deferredPrompt;
+  const installBtn = document.getElementById('installAppBtn');
+  const installModal = document.getElementById('installModal');
+
+  // --- NEW: Hide button immediately if already in "standalone" (installed) mode ---
+  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    if (installBtn) installBtn.style.display = 'none';
+  }
+
+  // 1. Register Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW registered'))
+        .catch(err => console.error('SW failed:', err));
+    });
+  }
+
+  // 2. Capture the install event
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Only show button if not already installed
+    if (installBtn) installBtn.style.display = 'block';
+  });
+
+  // 3. The "Yes" Button Logic
+  document.getElementById('installYes').addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        console.log('User accepted install');
+        if (installBtn) installBtn.style.display = 'none'; // Hide button
+      }
+      deferredPrompt = null;
+      installModal.style.display = 'none';
+    }
+  });
+
+  // 4. Manual Modal Trigger
+  if (installBtn) {
+    installBtn.addEventListener('click', () => {
+      installModal.style.display = 'flex';
+    });
+  }
+
+  // 5. Cancel Button
+  document.getElementById('installNo').addEventListener('click', () => {
+    installModal.style.display = 'none';
+  });
+
+  // 6. --- NEW: Final safeguard to hide button when installation finishes ---
+  window.addEventListener('appinstalled', () => {
+    console.log('App installed successfully');
+    if (installBtn) installBtn.style.display = 'none';
+    installModal.style.display = 'none';
+    deferredPrompt = null;
+  });
+</script>
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+   <title>Riverside service</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+ <link rel="manifest" href="manifest.json">
+
+ <!-- iOS Safari home screen support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Riverside service">
+
+<!-- Reuse your existing 192×192 icon for Apple devices -->
+<link rel="apple-touch-icon" sizes="180x180" href="customer-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="customer-192.png">
+<link rel="apple-touch-icon" sizes="167x167" href="customer-192.png">
+<!-- Fallback (also uses the same file) -->
+<link rel="apple-touch-icon" href="customer-192.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #e2e8f0;
+      min-height: 100dvh;
+      padding: 16px;
+    }
+    header {
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(96, 165, 250, 0.2);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      margin: -16px -16px 24px -16px;
+    }
+    .header-content {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 {
+      font-size: 1.6rem;
+      color: #60a5fa;
+    }
+    .back-btn {
+      color: #60a5fa;
+      font-size: 1.4rem;
+      text-decoration: none;
+      padding: 8px;
+    }
+    .members-grid {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 20px;
+      padding: 12px;
+    }
+    .member-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(6px);
+      border-radius: 16px;
+      padding: 20px 12px;
+      text-align: center;
+      border: 1px solid rgba(96, 165, 250, 0.15);
+      transition: all 0.2s ease;
+    }
+    .member-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+      border-color: rgba(96, 165, 250, 0.4);
+    }
+    .member-avatar {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #60a5fa;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+    }
+    .member-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+    .member-joined {
+      font-size: 0.82rem;
+      color: #94a3b8;
+    }
+    .empty-state {
+      text-align: center;
+      color: #94a3b8;
+      padding: 80px 20px;
+      font-size: 1.1rem;
+    }
+    .loader {
+      text-align: center;
+      padding: 60px;
+      color: #60a5fa;
+      font-size: 1.2rem;
+    }
+    @media (max-width: 500px) {
+      .members-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 16px;
+      }
+      .member-avatar {
+        width: 80px;
+        height: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-content">
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <h1>Members</h1>
+    <div style="width:44px;"></div> <!-- spacer -->
+  </div>
+</header>
+
+<!-- Search Bar -->
+<div style="max-width: 900px; margin: 0 auto 24px; position: relative;">
+  <input 
+    type="text" 
+    id="searchInput" 
+    placeholder="Search by name or recovery code..." 
+    autocomplete="off"
+    style="
+      width: 100%;
+      padding: 14px 16px 14px 48px;
+      border-radius: 50px;
+      background: rgba(30,41,59,0.7);
+      border: 1px solid rgba(96,165,250,0.3);
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s;
+    "
+  >
+  <i class="fas fa-search" 
+     style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #60a5fa; font-size: 1.2rem;">
+  </i>
+</div>
+
+<div id="loader" class="loader">Loading members...</div>
+<div id="members-grid" class="members-grid" style="display:none;"></div>
+<div id="empty" class="empty-state" style="display:none;">
+  <i class="fas fa-users" style="font-size:3.8rem; opacity:0.4; margin-bottom:16px;"></i><br>
+  No members found
+</div>
+
+<div id="toast-container" style="
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  width: 90%;
+  max-width: 420px;
+  pointer-events: none;
+"></div>
+
+
+<script>
+const scriptUrl = 'https://script.google.com/macros/s/AKfycbzMXrqzu0JPQ0u4E00YmSh30qlMqV5j-eINV99Zo8qp6mrgAko6uaKiOrHyWNGT5RVe/exec';
+
+let allUsers = []; // ← we'll store the full list here
+
+async function loadMembers() {
+  try {
+    const res = await fetch(`${scriptUrl}?operation=getMembers`);
+    const data = await res.json();
+
+    document.getElementById('loader').style.display = 'none';
+
+    if (data.status === 'error' || !data.users) {
+      document.getElementById('empty').innerHTML = 
+        `<strong>Error:</strong> ${data.message || 'Could not load members'}`;
+      document.getElementById('empty').style.display = 'block';
+      return;
+    }
+
+    if (data.users.length === 0) {
+      document.getElementById('empty').style.display = 'block';
+      return;
+    }
+
+    // Store full list for filtering
+    allUsers = data.users;
+
+    // Initial render
+    renderMembers(allUsers);
+
+    // Show grid
+    document.getElementById('members-grid').style.display = 'grid';
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('empty').innerHTML = 'Failed to load members<br><small>Check connection</small>';
+    document.getElementById('empty').style.display = 'block';
+  }
+}
+
+function renderMembers(users) {
+  const grid = document.getElementById('members-grid');
+  grid.innerHTML = '';
+
+  if (users.length === 0) {
+    document.getElementById('empty').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('empty').style.display = 'none';
+
+  users.forEach(user => {
+    const card = document.createElement('div');
+    card.className = 'member-card';
+
+    const img = document.createElement('img');
+    img.className = 'member-avatar';
+    img.alt = user.name;
+    const picUrl = user.picLink ? `https://lh3.googleusercontent.com/d/${extractFileId(user.picLink)}` : '';
+    img.src = picUrl || 'https://via.placeholder.com/96?text=@';
+    img.onerror = () => { img.src = 'https://via.placeholder.com/96?text=@'; };
+
+    const name = document.createElement('div');
+    name.className = 'member-name';
+    name.textContent = user.name;
+
+    const joined = document.createElement('div');
+    joined.className = 'member-joined';
+    joined.textContent = user.date ? ('Joined ' + formatDate(user.date)) : 'Joined —';
+
+    // Status display
+    const statusDiv = document.createElement('div');
+    statusDiv.style = 'margin: 8px 0; font-size: 0.9rem; font-weight: 500;';
+    
+    let statusText = user.status.charAt(0).toUpperCase() + user.status.slice(1);
+    let color = '#94a3b8';
+    if (user.status === 'approved') color = '#22c55e';
+    if (user.status === 'blocked') color = '#ef4444';
+    
+    statusDiv.innerHTML = `Status: <span style="color:${color}">${statusText}</span>`;
+
+     // Control buttons
+    const actions = document.createElement('div');
+    actions.style = 'margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;';
+
+    // Approve button (shown when not approved)
+    if (user.status !== 'approved') {
+      const approveBtn = document.createElement('button');
+      approveBtn.textContent = 'Approve';
+      approveBtn.style = 'padding: 8px 16px; background: #22c55e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;';
+      approveBtn.onclick = () => updateUserStatus(user.name, 'approved');
+      actions.appendChild(approveBtn);
+    }
+
+    // Block button (shown when not blocked)
+    if (user.status !== 'blocked') {
+      const blockBtn = document.createElement('button');
+      blockBtn.textContent = 'Block';
+      blockBtn.style = 'padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;';
+      blockBtn.onclick = () => updateUserStatus(user.name, 'blocked');
+      actions.appendChild(blockBtn);
+    }
+
+    // Admin toggle (only for approved users)
+    if (user.status === 'approved') {
+      const adminBtn = document.createElement('button');
+      adminBtn.textContent = user.isAdmin ? 'Admin ★' : 'Make Admin';
+      adminBtn.style = user.isAdmin 
+        ? 'padding:8px 16px; background:#f59e0b; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;'
+        : 'padding:8px 16px; background:#6b7280; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;';
+      
+      adminBtn.onclick = () => toggleAdmin(user.name, adminBtn);
+      actions.appendChild(adminBtn);
+    }
+
+    // Channels button → opens floating modal (only for approved users)
+    if (user.status === 'approved') {
+      const channelsBtn = document.createElement('button');
+      channelsBtn.textContent = 'Channels';
+      channelsBtn.style = 'padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;';
+      
+      channelsBtn.onclick = () => openChannelsModal(user.name);
+      
+      actions.appendChild(channelsBtn);
+    }
+
+    card.append(img, name, joined, statusDiv, actions);
+    grid.appendChild(card);
+  });
+}
+
+// Real-time search filter
+document.getElementById('searchInput')?.addEventListener('input', (e) => {
+  const query = e.target.value.toLowerCase().trim();
+
+  if (!query) {
+    renderMembers(allUsers);
+    return;
+  }
+
+  const filtered = allUsers.filter(user => {
+    const nameMatch = user.name.toLowerCase().includes(query);
+    const codeMatch = (user.identityCode || '').toLowerCase().includes(query);
+    return nameMatch || codeMatch;
+  });
+
+  renderMembers(filtered);
+});
+
+
+
+function extractFileId(url) {
+  if (!url) return '';
+  const match = url.match(/[-\w]{25,}/);
+  return match ? match[0] : '';
+}
+
+function formatDate(isoString) {
+  if (!isoString) return '—';
+  try {
+    const d = new Date(isoString);
+    return d.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  } catch {
+    return '—';
+  }
+}
+
+async function authoriseUser(username) {
+  if (!confirm(`Authorise ${username} to post in all channels?`)) return;
+
+  try {
+    // Step 1: Get all channels
+    const resChannels = await fetch(`${scriptUrl}?operation=getAllChannels`);
+    const { channels } = await resChannels.json();
+
+    let authorisedAny = false;
+
+    // Step 2: Authorise user in EVERY existing channel
+    if (channels?.length > 0) {
+      for (const ch of channels) {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            operation: 'authoriseForChannel',
+            username: username,
+            channelId: ch.id
+          })
+        });
+      }
+      authorisedAny = true;
+    } else {
+      // Step 3: No channels exist → create a default personal channel for this user
+      const resCreate = await fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          operation: 'createChannel',
+          creator: username,
+          name: `${username}'s Space`,
+          description: `Personal channel for ${username}`
+        })
+      });
+      const createData = await resCreate.json();
+
+      if (createData.status === 'success') {
+        // Authorise the user in their new channel
+        await fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            operation: 'authoriseForChannel',
+            username: username,
+            channelId: createData.channelId
+          })
+        });
+        authorisedAny = true;
+        showToast(`Created and authorised ${username}'s personal channel!`, 'success');
+      }
+    }
+
+    if (authorisedAny) {
+      alert(`${username} is now authorised to post.`);
+    } else {
+      alert("No channels exist and creation failed.");
+    }
+  } catch(e) {
+    alert('Network error – try again');
+    console.error(e);
+  }
+}
+async function updateUserStatus(targetName, newStatus) {
+  // Use toast-based confirmation instead of confirm()
+  const confirmed = await showConfirmToast(
+    "Confirm Action",
+    `Are you sure you want to set ${targetName} to ${newStatus}?`,
+    "Yes, Proceed",
+    "Cancel"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({
+        operation: 'updateUserStatus',
+        targetName,
+        newStatus
+      })
+    });
+
+    const result = await res.json();
+
+    if (result.status === 'success') {
+      showToast(`${targetName} is now ${newStatus}`, 'success');
+      loadMembers();
+    } else {
+      showToast('Error: ' + (result.message || 'Unknown error'), 'error');
+    }
+  } catch (err) {
+    showToast('Network error while updating status', 'error');
+    console.error(err);
+  }
+}
+
+
+async function toggleAdmin(username, buttonElement) {
+  const confirmed = await showConfirmToast(
+    "Confirm Admin Toggle",
+    `Toggle admin rights for ${username}?`,
+    "Yes, Toggle",
+    "Cancel"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({
+        operation: 'toggleUserAdmin',
+        targetName: username
+      })
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      const isNowAdmin = buttonElement.textContent.includes('★');
+      buttonElement.textContent = isNowAdmin ? 'Make Admin' : 'Admin ★';
+      buttonElement.style.background = isNowAdmin ? '#6b7280' : '#f59e0b';
+      showToast(`${username} admin status updated`, 'success');
+    } else {
+      showToast('Error: ' + (data.message || 'Unknown'), 'error');
+    }
+  } catch (err) {
+    showToast('Network error', 'error');
+  }
+}
+
+async function checkChannelAuth(username, channelId, buttonElement) {
+  try {
+    const res = await fetch(`${scriptUrl}?operation=isAuthorised&username=${encodeURIComponent(username)}&channelId=${encodeURIComponent(channelId)}`);
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      if (data.isAuthorised) {
+        buttonElement.textContent = 'Unauthorise';
+        buttonElement.style.background = '#ef4444';      // red for remove
+        buttonElement.style.color = 'white';
+        buttonElement.dataset.action = 'deauthorise';    // store action
+      } else {
+        buttonElement.textContent = 'Authorise';
+        buttonElement.style.background = '#8b5cf6';      // purple for add
+        buttonElement.style.color = 'white';
+        buttonElement.dataset.action = 'authorise';
+      }
+      buttonElement.disabled = false;
+    } else {
+      buttonElement.textContent = 'Error';
+      buttonElement.style.background = '#ef4444';
+      buttonElement.disabled = true;
+    }
+  } catch (e) {
+    buttonElement.textContent = 'Error';
+    buttonElement.style.background = '#ef4444';
+    buttonElement.disabled = true;
+  }
+}
+
+async function toggleChannelAuth(username, channelId, buttonElement, channelName) {
+  const currentAction = buttonElement.dataset.action || 'authorise';
+
+  const confirmMsg = currentAction === 'deauthorise'
+    ? `Remove ${username} from ${channelName}? They will no longer be able to post.`
+    : `Authorise ${username} for ${channelName}?`;
+
+  const confirmed = await showConfirmToast(
+    currentAction === 'deauthorise' ? "Remove Access" : "Grant Access",
+    confirmMsg,
+    currentAction === 'deauthorise' ? "Remove" : "Authorise",
+    "Cancel"
+  );
+
+  if (!confirmed) return;
+
+  const operation = currentAction === 'deauthorise' ? 'deauthoriseForChannel' : 'authoriseForChannel';
+
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({
+        operation: operation,
+        username: username,
+        channelId: channelId
+      })
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      if (currentAction === 'deauthorise') {
+        buttonElement.textContent = 'Authorise';
+        buttonElement.style.background = '#8b5cf6';
+        buttonElement.dataset.action = 'authorise';
+        showToast(`Removed from ${channelName}`, 'success');
+      } else {
+        buttonElement.textContent = 'Unauthorise';
+        buttonElement.style.background = '#ef4444';
+        buttonElement.dataset.action = 'deauthorise';
+        showToast(`Authorised for ${channelName}`, 'success');
+      }
+    } else {
+      showToast('Failed: ' + (data.message || 'Unknown error'), 'error');
+    }
+  } catch (err) {
+    showToast('Network error – try again', 'error');
+  }
+}
+// ────────────────────────────────────────────────
+// Floating Channels Modal (shows channel pic + name + auth button)
+// ────────────────────────────────────────────────
+
+function openChannelsModal(username) {
+  // Remove any existing modal first
+  const oldModal = document.getElementById('channels-modal');
+  if (oldModal) oldModal.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'channels-modal';
+  modal.style = `
+    position: fixed; inset: 0; 
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; 
+    z-index: 2000;
+  `;
+
+  const card = document.createElement('div');
+  card.style = `
+    background: rgba(15,23,42,0.98); 
+    border: 1px solid rgba(96,165,250,0.35);
+    border-radius: 16px; 
+    width: 90%; max-width: 440px; max-height: 85vh;
+    overflow-y: auto; 
+    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    padding: 20px; color: #e2e8f0;
+  `;
+
+  card.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(96,165,250,0.2);">
+      <h3 style="margin:0; color:#60a5fa; font-size:1.3rem;">Channels • ${username}</h3>
+      <button id="close-modal-btn" style="background:none; border:none; color:#94a3b8; font-size:2rem; cursor:pointer; padding:0 8px;">×</button>
+    </div>
+    <div id="modal-channels-list" style="display:flex; flex-direction:column; gap:10px;">
+      <div style="text-align:center; padding:30px 0;">
+        <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:#60a5fa;"></i>
+        <div style="margin-top:12px; color:#94a3b8;">Loading channels...</div>
+      </div>
+    </div>
+  `;
+
+  modal.appendChild(card);
+  document.body.appendChild(modal);
+
+  // Close on X click or outside click
+  document.getElementById('close-modal-btn').onclick = () => modal.remove();
+  modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+  // Load actual channels
+  loadChannelsIntoModal(username, document.getElementById('modal-channels-list'));
+}
+
+async function loadChannelsIntoModal(username, container) {
+  try {
+    const res = await fetch(`${scriptUrl}?operation=getAllChannels`);
+    const data = await res.json();
+    const channels = data.channels || [];
+
+    container.innerHTML = '';
+
+    if (channels.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; color:#94a3b8; padding:30px 0;">
+          No channels created yet
+        </div>`;
+      return;
+    }
+
+    channels.forEach(ch => {
+      const row = document.createElement('div');
+      row.style = `
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px; border-radius: 12px;
+        background: rgba(30,41,59,0.5);
+        transition: background 0.2s;
+      `;
+      row.onmouseenter = () => row.style.background = 'rgba(30,41,59,0.75)';
+      row.onmouseleave = () => row.style.background = 'rgba(30,41,59,0.5)';
+
+      // Channel avatar
+      const avatar = document.createElement('img');
+      avatar.style = 'width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #60a5fa44; flex-shrink:0;';
+      avatar.src = ch.picLink 
+        ? `https://lh3.googleusercontent.com/d/${extractFileId(ch.picLink)}` 
+        : `https://via.placeholder.com/48?text=${ch.name.charAt(0).toUpperCase()}`;
+      avatar.onerror = () => { avatar.src = 'https://via.placeholder.com/48?text=@'; };
+
+      // Name
+      const nameDiv = document.createElement('div');
+      nameDiv.style = 'flex:1; font-size:1rem; font-weight:500;';
+      nameDiv.textContent = ch.name;
+
+      // Auth button
+      const authBtn = document.createElement('button');
+      authBtn.textContent = 'Checking...';
+      authBtn.style = 'padding:8px 14px; font-size:0.9rem; border-radius:8px; cursor:pointer; min-width:110px; transition: all 0.2s;';
+      
+      authBtn.onclick = () => toggleChannelAuth(username, ch.id, authBtn, ch.name);
+
+      row.append(avatar, nameDiv, authBtn);
+      container.appendChild(row);
+
+      // Check current auth status
+      checkChannelAuth(username, ch.id, authBtn);
+    });
+  } catch (err) {
+    container.innerHTML = `
+      <div style="color:#f87171; padding:30px 0; text-align:center;">
+        Failed to load channels — check connection
+      </div>`;
+  }
+}
+
+// Responsive toast-based confirmation dialog
+// ────────────────────────────────────────────────
+// CONFIRM TOAST (CLICKABLE)
+// ────────────────────────────────────────────────
+async function showConfirmToast(
+  title,
+  message,
+  confirmText = "Yes",
+  cancelText = "Cancel"
+) {
+  return new Promise((resolve) => {
+    const container = document.getElementById('toast-container');
+
+    const toast = document.createElement('div');
+
+    // IMPORTANT: pointer-events:auto enables clicking
+    toast.style = `
+      background:#1e293b;
+      color:#e2e8f0;
+      padding:16px 20px;
+      border-radius:12px;
+      margin-bottom:10px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.6);
+      border-left:5px solid #f59e0b;
+      animation:slideIn 0.4s ease-out;
+      font-size:0.95rem;
+      pointer-events:auto;
+    `;
+
+    toast.innerHTML = `
+      <div style="font-weight:600;margin-bottom:8px;">${title}</div>
+      <div style="margin-bottom:16px;">${message}</div>
+
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button class="toast-cancel" style="
+          padding:8px 16px;
+          background:transparent;
+          border:1px solid #64748b;
+          color:#94a3b8;
+          border-radius:999px;
+          cursor:pointer;
+          font-weight:600;
+        ">${cancelText}</button>
+
+        <button class="toast-confirm" style="
+          padding:8px 20px;
+          background:linear-gradient(135deg,#ef4444,#f87171);
+          color:white;
+          border:none;
+          border-radius:999px;
+          cursor:pointer;
+          font-weight:600;
+        ">${confirmText}</button>
+      </div>
+    `;
+
+    container.appendChild(toast);
+
+    // safer selectors (no duplicate IDs issue)
+    const confirmBtn = toast.querySelector('.toast-confirm');
+    const cancelBtn = toast.querySelector('.toast-cancel');
+
+    confirmBtn.onclick = () => {
+      toast.remove();
+      resolve(true);
+    };
+
+    cancelBtn.onclick = () => {
+      toast.remove();
+      resolve(false);
+    };
+
+    // auto cancel after 15s
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        toast.remove();
+        resolve(false);
+      }
+    }, 15000);
+  });
+}
+
+
+// ────────────────────────────────────────────────
+// SIMPLE INFO / SUCCESS / ERROR TOAST
+// ────────────────────────────────────────────────
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+
+  const toast = document.createElement('div');
+
+  toast.style = `
+    background:#1e293b;
+    color:#e2e8f0;
+    padding:14px 20px;
+    border-radius:12px;
+    margin-bottom:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.5);
+    border-left:5px solid ${
+      type === 'success' ? '#22c55e' :
+      type === 'error' ? '#ef4444' :
+      '#60a5fa'
+    };
+    display:flex;
+    align-items:center;
+    gap:12px;
+    animation:slideIn 0.4s ease-out, fadeOut 0.4s 3.6s forwards;
+    font-size:0.95rem;
+    pointer-events:auto;
+  `;
+
+  const icon = document.createElement('i');
+  icon.className =
+    type === 'success' ? 'fas fa-check-circle' :
+    type === 'error'   ? 'fas fa-exclamation-circle' :
+                         'fas fa-info-circle';
+
+  icon.style.color =
+    type === 'success' ? '#22c55e' :
+    type === 'error'   ? '#ef4444' :
+                         '#60a5fa';
+
+  toast.appendChild(icon);
+  toast.appendChild(document.createTextNode(message));
+
+  container.appendChild(toast);
+
+  setTimeout(() => toast.remove(), 4000);
+}
+window.addEventListener('load', loadMembers);
+</script>
+<script>
+ if ('serviceWorker' in navigator) {
+  // Use './' to stay inside the /The-Riverside-Connect/ subfolder
+  navigator.serviceWorker.register('./sw.js', { scope: './' })
+    .then(reg => console.log('✅ SW registered in subfolder scope'))
+    .catch(err => console.error('❌ SW registration failed:', err));
+}
+</script>
+</body>
+</html>

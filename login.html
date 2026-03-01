@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Riverside  Service</title>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="manifest" href="manifest.json">
+  <!-- iOS Safari home screen support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Riverside service">
+
+<!-- Reuse your existing 192×192 icon for Apple devices -->
+<link rel="apple-touch-icon" sizes="180x180" href="customer-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="customer-192.png">
+<link rel="apple-touch-icon" sizes="167x167" href="customer-192.png">
+<!-- Fallback (also uses the same file) -->
+<link rel="apple-touch-icon" href="customer-192.png">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #e0e7ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255,255,255,0.12);
+      text-align: center;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 2.1rem;
+      margin-bottom: 0.8rem;
+      color: #60a5fa;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 2.2rem;
+      font-size: 0.95rem;
+    }
+    /* Only these parts are changed/fixed: */
+    .profile-upload {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin: 0 auto 1.8rem;
+      cursor: pointer;
+    }
+
+    .profile-upload input[type="file"] {
+      position: absolute;
+      inset: 0;                /* ← important: covers whole circle */
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 10;             /* ← above the image */
+    }
+
+    .upload-label {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #3b82f6;
+      color: white;
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s ease;
+      pointer-events: none;     /* can stay — we don't click the label anymore */
+      z-index: 5;
+    }
+      .upload-label {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #3b82f6;
+      color: white;
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .profile-upload:hover .upload-label {
+      background: #2563eb;
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 1.6rem;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.12);
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      background: rgba(255,255,255,0.18);
+      box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.35);
+    }
+
+    input::placeholder {
+      color: #94a3b8;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      margin-top: 1.5rem;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.35s ease;
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(59, 130, 246, 0.5);
+      background: linear-gradient(90deg, #2563eb, #3b82f6);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+    .preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #1e293b;
+  border: 4px solid #60a5fa;
+  box-shadow: 
+    0 0 0 6px rgba(96, 165, 250, 0.15),
+    inset 0 2px 8px rgba(0,0,0,0.4);
+  transition: all 0.35s ease;
+}
+.preview-emoji {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #60a5fa;
+  border: 4px solid #60a5fa;
+  box-shadow: 
+    0 0 0 6px rgba(96, 165, 250, 0.15),
+    inset 0 2px 8px rgba(0,0,0,0.4);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.spinner {
+  border: 3px solid rgba(255,255,255,0.3);
+  border-top: 3px solid white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.checkmark {
+  color: #22c55e; /* green */
+  font-size: 1.2rem;
+  display: inline-block;
+  vertical-align: middle;
+  animation: pop 0.3s ease-out forwards;
+}
+
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+
+   #toast-container {
+  position: fixed; 
+  top: 20px; 
+  left: 50%; 
+  transform: translateX(-50%);
+  z-index: 9999; /* Ensures it is above everything else */
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px;
+}
+
+.toast {
+  background: #1e293b; 
+  color: white; 
+  padding: 12px 24px; 
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+  border-left: 4px solid #ef4444; /* Red stripe for errors */
+  animation: slideDown 0.3s ease forwards; 
+  min-width: 280px;
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  font-size: 0.9rem;
+}
+
+@keyframes slideDown { 
+  from { opacity: 0; transform: translateY(-20px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
+  </style>
+</head>
+<body>
+
+  <script>
+  // Run before DOM is even parsed
+  if (localStorage.getItem('userName')) {
+    window.location.replace('/index.html');  // replace → doesn't add to history
+  }
+
+  if (localStorage.getItem('userName') && localStorage.getItem('userIdCode')) {
+  window.location.replace('/index.html');
+}
+</script>
+
+<div id="toast-container"></div>
+  <div class="container">
+    <h1>Join Chat</h1>
+    <p class="subtitle">Set up your profile to start chatting</p>
+
+    <form id="loginForm">
+      <!-- Circular Profile Preview + Upload -->
+      <div class="profile-upload">
+  <!-- Emoji placeholder -->
+  <span class="preview-emoji" id="previewEmoji">😊</span>
+
+  <!-- Image preview (hidden by default) -->
+  <img
+    src=""
+    alt="Profile Preview"
+    class="preview"
+    id="preview"
+    style="display:none;"
+  >
+
+  <label class="upload-label" for="profilePic">Choose Photo</label>
+  
+        
+        <!-- 
+          Most important fixes:
+          1. Added for="profilePic" to label (optional but good practice)
+          2. Made input cover the whole circle area → you click anywhere on the photo
+        -->
+        <input
+          type="file"
+          id="profilePic"
+          accept="image/*"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="name">Your Name</label>
+        <input
+          type="text"
+          id="name"
+          placeholder="Enter your display name"
+          required
+          autocomplete="off"
+        >
+      </div>
+
+<button type="submit" id="continueBtn">
+  <span class="btn-icon"><i class="fas fa-arrow-right"></i></span>
+  <span class="btn-text">Continue</span>
+</button>
+
+    </form>
+
+    <p id="recoverLink" style="margin-top: 1rem; color: #60a5fa; cursor: pointer;">Recover existing account?</p>
+<div id="recoverForm" style="display: none;">
+  <div class="form-group">
+    <label for="recoveryCode">Enter Recovery Code</label>
+    <input type="text" id="recoveryCode" placeholder="Your unique identity code" required autocomplete="off">
+  </div>
+  <button id="recoverBtn">Recover Account</button>
+</div>
+
+  </div>
+
+  <script>
+    // Your existing JavaScript remains 100% unchanged and works perfectly
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbzMXrqzu0JPQ0u4E00YmSh30qlMqV5j-eINV99Zo8qp6mrgAko6uaKiOrHyWNGT5RVe/exec';
+function showToast(message) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<i class="fas fa-exclamation-circle"></i> <span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { 
+    toast.style.opacity = '0'; 
+    setTimeout(() => toast.remove(), 500); 
+  }, 3000);
+}
+   const fileInput = document.getElementById('profilePic');
+const preview = document.getElementById('preview');
+const previewEmoji = document.getElementById('previewEmoji');
+
+fileInput.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      preview.src = ev.target.result;
+      preview.style.display = 'block';     // show selected image
+      previewEmoji.style.display = 'none'; // hide decorative emoji
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+   const continueBtn = document.getElementById('continueBtn');
+const btnIcon = continueBtn.querySelector('.btn-icon');
+const btnText = continueBtn.querySelector('.btn-text');
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = document.getElementById('name').value.trim();
+  const file = document.getElementById('profilePic').files[0];
+
+  if (!name) return showToast('Please enter your name.');
+  if (!file) return showToast('Please select a profile picture.');
+  // Show spinner
+  continueBtn.disabled = true;
+  btnText.style.display = 'none';
+  btnIcon.innerHTML = '<span class="spinner"></span>';
+
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64Image = reader.result.split(',')[1];
+
+    try {
+      const response = await fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify({
+          operation: 'register',
+          name,
+          imageData: base64Image,
+          imageName: file.name
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.status === 'success') {
+  // Replace spinner with checkmark
+  btnIcon.innerHTML = '<span class="checkmark">✔</span>';
+
+  // Small delay to show checkmark
+  setTimeout(() => {
+    localStorage.setItem('userName', name);
+    
+    // NEW: Save the profile picture link from backend
+    // (Assuming backend returns picLink in result — adjust if different)
+    if (result.picLink) {
+      localStorage.setItem('userPicLink', result.picLink);
+    }
+    localStorage.setItem('userIdCode', result.identityCode);
+showToast(`Account created! Your recovery code is: ${result.identityCode}. Save this securely.`);
+    window.location.href = 'index.html';
+  }, 800); // 0.8 seconds
+} else {
+        showToast(result.message || 'Something went wrong');
+        // Restore button
+        continueBtn.disabled = false;
+        btnText.style.display = 'inline';
+        btnIcon.innerHTML = '<i class="fas fa-arrow-right"></i>';
+      }
+    } catch (err) {
+      showToast('Network error: ' + err.message);
+      continueBtn.disabled = false;
+      btnText.style.display = 'inline';
+      btnIcon.innerHTML = '<i class="fas fa-arrow-right"></i>';
+    }
+  };
+
+  reader.readAsDataURL(file);
+});
+
+
+document.getElementById('recoverLink').addEventListener('click', () => {
+  document.getElementById('recoverForm').style.display = 'block';
+  document.getElementById('recoverLink').style.display = 'none';
+});
+
+document.getElementById('recoverBtn').addEventListener('click', async () => {
+  const code = document.getElementById('recoveryCode').value.trim();
+  if (!code) return showToast('Enter your recovery code.');
+
+  const recoverBtn = document.getElementById('recoverBtn');
+  recoverBtn.disabled = true;
+  recoverBtn.innerHTML = '<span class="spinner"></span> Recovering...';
+
+  try {
+    const response = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({
+        operation: 'recover',
+        identityCode: code
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      localStorage.setItem('userName', result.name);
+      localStorage.setItem('userPicLink', result.picLink);
+      localStorage.setItem('userIdCode', code);
+      showToast('Account recovered!');
+      setTimeout(() => window.location.href = 'index.html', 1000);
+    } else {
+      showToast(result.message || 'Recovery failed');
+      recoverBtn.disabled = false;
+      recoverBtn.innerHTML = 'Recover Account';
+    }
+  } catch (err) {
+    showToast('Network error: ' + err.message);
+    recoverBtn.disabled = false;
+    recoverBtn.innerHTML = 'Recover Account';
+  }
+});
+
+  </script>
+
+<script>
+ if ('serviceWorker' in navigator) {
+  // Use './' to stay inside the /The-Riverside-Connect/ subfolder
+  navigator.serviceWorker.register('./sw.js', { scope: './' })
+    .then(reg => console.log('✅ SW registered in subfolder scope'))
+    .catch(err => console.error('❌ SW registration failed:', err));
+}
+</script>
+</body>
+</html>

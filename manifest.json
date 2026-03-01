@@ -1,0 +1,59 @@
+{
+  "name": "Riverside service",
+  "short_name": "Riverside service",
+  "description": "Join the Deliverance Church Riverside service line",
+  "start_url": "./index.html",
+  "id": "./service",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "background_color": "#0f2027",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["social", "communication", "education"],
+  "icons": [
+    {
+      "src": "./customer-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./customer-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./customer-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./customer-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Announcements",
+      "short_name": "Announcements",
+      "description": "View latest church announcements",
+      "url": "./announce.html",
+      "icons": [{ "src": "./customer-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "./customer-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Riverside service Chat"
+    }
+  ],
+  "prefer_related_applications": false
+}
