@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Riverside Connect – Manage Roles</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body {font-family:system-ui; background:linear-gradient(135deg,#0f172a,#1e293b); color:#e2e8f0; min-height:100dvh; margin:0; padding:0;}
+    header {background:rgba(15,23,42,0.9); padding:16px 20px; position:sticky; top:0; z-index:10; border-bottom:1px solid rgba(96,165,250,0.2);}
+    .header-content {max-width:900px; margin:auto; display:flex; justify-content:space-between; align-items:center;}
+    h1 {font-size:1.6rem; color:#60a5fa; margin:0;}
+    main {max-width:900px; margin:24px auto; padding:0 16px;}
+    table {width:100%; border-collapse:collapse; background:rgba(30,41,59,0.6); border-radius:12px; overflow:hidden;}
+    th, td {padding:14px 12px; text-align:left; border-bottom:1px solid rgba(96,165,250,0.15);}
+    th {background:rgba(96,165,250,0.15); color:#60a5fa;}
+    select {background:#1e293b; color:white; border:1px solid #60a5fa44; padding:8px 12px; border-radius:8px; font-size:0.95rem;}
+    .empty {text-align:center; color:#94a3b8; padding:80px 20px; font-size:1.2rem;}
+    .toast {position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1e293b; color:white; padding:12px 24px; border-radius:999px; box-shadow:0 8px 32px rgba(0,0,0,0.6); z-index:9999; min-width:200px; text-align:center;}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-content">
+    <h1>Manage Roles</h1>
+    <a href="index.html" style="color:#60a5fa; font-size:1.4rem;"><i class="fas fa-home"></i></a>
+  </div>
+</header>
+
+<main>
+  <h2 style="color:#60a5fa; margin-bottom:16px;">Assign Roles to Members</h2>
+  <div id="membersTable"></div>
+</main>
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+const scriptUrl = 'https://script.google.com/macros/s/AKfycbx93cPY6uVImvVNeOUTEe_NDQeDzicmI6GJpCJDaHgPrXZX9migro00spd_hWyTeV8a/exec'; 
+const userName = localStorage.getItem('userName');
+
+async function loadRolePage() {
+  try {
+    // Check if current user is admin
+    const statusRes = await fetch(`${scriptUrl}?operation=getUserStatus&name=${encodeURIComponent(userName)}`);
+    const statusData = await statusRes.json();
+
+    if (!statusData.isAdmin) {
+      document.getElementById('membersTable').innerHTML = '<p style="color:#f87171; text-align:center; padding:60px;">Only admins can manage roles.</p>';
+      return;
+    }
+
+    // Load all users
+    const usersRes = await fetch(`${scriptUrl}?operation=getMembers`);
+    const { users } = await usersRes.json();
+
+    if (!users || users.length === 0) {
+      document.getElementById('membersTable').innerHTML = '<p class="empty">No members found</p>';
+      return;
+    }
+
+    let html = '<table><thead><tr><th>Name</th><th>Current Role</th><th>Change Role</th></tr></thead><tbody>';
+
+    users.forEach(u => {
+      const role = u.role || 'None';
+      html += `
+        <tr>
+          <td>${u.name}</td>
+          <td style="color:${role === 'treasurer' ? '#22c55e' : '#94a3b8'}">${role}</td>
+          <td>
+            <select onchange="assignRole('${u.name}', this.value)">
+              <option value="" ${role === '' ? 'selected' : ''}>None</option>
+              <option value="treasurer" ${role === 'treasurer' ? 'selected' : ''}>Treasurer</option>
+            </select>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('membersTable').innerHTML = html;
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('membersTable').innerHTML = '<p style="color:#f87171; text-align:center;">Failed to load members</p>';
+  }
+}
+
+async function assignRole(targetName, newRole) {
+  try {
+    const res = await fetch(scriptUrl, {
+      method: 'POST',
+      body: JSON.stringify({ operation: 'assignRole', targetName, newRole })
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      showToast(`Role updated for ${targetName}`);
+      loadRolePage(); // refresh list
+    } else {
+      showToast('Error: ' + (data.message || 'Failed'), true);
+    }
+  } catch (err) {
+    showToast('Network error', true);
+  }
+}
+
+function showToast(msg, isError = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.background = isError ? '#ef4444' : '#22c55e';
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 3000);
+}
+
+loadRolePage();
+</script>
+</body>
+</html>
